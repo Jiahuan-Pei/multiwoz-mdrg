@@ -13,12 +13,14 @@ from torch.optim import Adam
 from utils import util
 from model.model import Model
 
+# pp added: print out env
+util.config_and_print_run_env_info()
 
 parser = argparse.ArgumentParser(description='S2S')
 parser.add_argument('--batch_size', type=int, default=64, metavar='N', help='input batch size for training (default: 128)')
 parser.add_argument('--vocab_size', type=int, default=400, metavar='V')
 
-parser.add_argument('--use_attn', type=util.str2bool, nargs='?', const=True, default=False)
+parser.add_argument('--use_attn', type=util.str2bool, nargs='?', const=True, default=True) # F
 parser.add_argument('--attention_type', type=str, default='bahdanau')
 parser.add_argument('--use_emb',  type=util.str2bool, nargs='?', const=True, default=False)
 
@@ -42,14 +44,14 @@ parser.add_argument('--clip', type=float, default=5.0, help='clip the gradient b
 parser.add_argument('--teacher_ratio', type=float, default=1.0, help='probability of using targets for learning')
 parser.add_argument('--dropout', type=float, default=0.0)
 
-parser.add_argument('--no_cuda',  type=util.str2bool, nargs='?', const=True, default=True)
+parser.add_argument('--no_cuda',  type=util.str2bool, nargs='?', const=True, default=False)
 
 parser.add_argument('--seed', type=int, default=0, metavar='S', help='random seed (default: 1)')
 parser.add_argument('--train_output', type=str, default='data/train_dials/', help='Training output dir path')
 
-parser.add_argument('--max_epochs', type=int, default=15)
+parser.add_argument('--max_epochs', type=int, default=20) # 15
 parser.add_argument('--early_stop_count', type=int, default=2)
-parser.add_argument('--model_dir', type=str, default='model/model/')
+parser.add_argument('--model_dir', type=str, default='results/bsl_g/model/')
 parser.add_argument('--model_name', type=str, default='translate.ckpt')
 
 parser.add_argument('--load_param', type=util.str2bool, nargs='?', const=True, default=False)
@@ -62,14 +64,23 @@ args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 torch.manual_seed(args.seed)
 device = torch.device("cuda" if args.cuda else "cpu")
+print('args.cuda={}'.format(args.cuda))
 
 
 def train(print_loss_total,print_act_total, print_grad_total, input_tensor, target_tensor, bs_tensor, db_tensor, name=None):
     # create an empty matrix with padding tokens
     input_tensor, input_lengths = util.padSequence(input_tensor)
     target_tensor, target_lengths = util.padSequence(target_tensor)
-    bs_tensor = torch.tensor(bs_tensor, dtype=torch.float, device=device)
-    db_tensor = torch.tensor(db_tensor, dtype=torch.float, device=device)
+    bs_tensor = torch.as_tensor(bs_tensor, dtype=torch.float, device=device)
+    db_tensor = torch.as_tensor(db_tensor, dtype=torch.float, device=device)
+
+    # pp added -- start
+    data = input_tensor, target_tensor, bs_tensor, db_tensor
+    if torch.cuda.is_available():
+        data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in
+                range(len(data))]
+    input_tensor, target_tensor, bs_tensor, db_tensor = data
+    # pp added -- end
 
     loss, loss_acts, grad = model.train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
                              bs_tensor, name)
@@ -127,8 +138,16 @@ def trainIters(model, n_epochs=10, args=args):
             # create an empty matrix with padding tokens
             input_tensor, input_lengths = util.padSequence(input_tensor)
             target_tensor, target_lengths = util.padSequence(target_tensor)
-            bs_tensor = torch.tensor(bs_tensor, dtype=torch.float, device=device)
-            db_tensor = torch.tensor(db_tensor, dtype=torch.float, device=device)
+            bs_tensor = torch.as_tensor(bs_tensor, dtype=torch.float, device=device)
+            db_tensor = torch.as_tensor(db_tensor, dtype=torch.float, device=device)
+
+            # pp added -- start
+            data = input_tensor, target_tensor, bs_tensor, db_tensor
+            if torch.cuda.is_available():
+                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in
+                        range(len(data))]
+            input_tensor, target_tensor, bs_tensor, db_tensor = data
+            # pp added -- end
 
             proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor)
             proba = proba.view(-1, model.vocab_size) # flatten all predictions

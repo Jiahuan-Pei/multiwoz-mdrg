@@ -1,5 +1,5 @@
 from __future__ import division, print_function, unicode_literals
-
+import pdb
 import json
 import math
 import operator
@@ -108,9 +108,11 @@ class EncoderRNN(nn.Module):
         embedded = self.embedding(input_seqs)
         embedded = embedded.transpose(0, 1)  # [B,T,E]
         sort_idx = np.argsort(-input_lens)
-        unsort_idx = torch.LongTensor(np.argsort(sort_idx))
+        # pp added
+        unsort_idx = np.argsort(sort_idx)
+        # unsort_idx = torch.LongTensor(np.argsort(sort_idx))
         input_lens = input_lens[sort_idx]
-        sort_idx = torch.LongTensor(sort_idx)
+        # sort_idx = torch.LongTensor(sort_idx)
         embedded = embedded[sort_idx].transpose(0, 1)  # [T,B,E]
         packed = torch.nn.utils.rnn.pack_padded_sequence(embedded, input_lens)
         outputs, hidden = self.rnn(packed, hidden)
@@ -356,6 +358,7 @@ class Model(nn.Module):
         """Given the user sentence, user belief state and database pointer,
         encode the sentence, decide what policy vector construct and
         feed it as the first hiddent state to the decoder."""
+
         target_length = target_tensor.size(1)
 
         # for fixed encoding this is zero so it does not contribute
@@ -370,9 +373,11 @@ class Model(nn.Module):
         # GENERATOR
         # Teacher forcing: Feed the target as the next input
         _, target_len = target_tensor.size()
-        decoder_input = torch.LongTensor([[SOS_token] for _ in range(batch_size)], device=self.device)
 
-        proba = torch.zeros(batch_size, target_length, self.vocab_size)  # [B,T,V]
+        decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long, device=self.device)
+        # decoder_input = torch.LongTensor([[SOS_token] for _ in range(batch_size)], device=self.device)
+
+        proba = torch.zeros(batch_size, target_length, self.vocab_size).to(self.device)  # [B,T,V]
 
         for t in range(target_len):
             decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs)
@@ -420,7 +425,8 @@ class Model(nn.Module):
                 self.topk = 1
                 endnodes = []  # stored end nodes
                 number_required = min((self.topk + 1), self.topk - len(endnodes))
-                decoder_input = torch.LongTensor([[SOS_token]], device=self.device)
+                decoder_input = torch.as_tensor([[SOS_token]], dtype=torch.long, device=self.device)
+                # decoder_input = torch.LongTensor([[SOS_token]], device=self.device)
 
                 # starting node hidden vector, prevNode, wordid, logp, leng,
                 node = BeamSearchNode(decoder_hidden, None, decoder_input, 0, 1)
@@ -499,7 +505,9 @@ class Model(nn.Module):
     def greedy_decode(self, decoder_hidden, encoder_outputs, target_tensor):
         decoded_sentences = []
         batch_size, seq_len = target_tensor.size()
-        decoder_input = torch.LongTensor([[SOS_token] for _ in range(batch_size)], device=self.device)
+        # pp added
+        decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long, device=self.device)
+        # decoder_input = torch.LongTensor([[SOS_token] for _ in range(batch_size)], device=self.device)
 
         decoded_words = torch.zeros((batch_size, self.max_len))
         for t in range(self.max_len):

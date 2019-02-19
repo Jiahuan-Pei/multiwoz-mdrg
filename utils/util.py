@@ -30,6 +30,7 @@ def padSequence(tensor):
         sequence = tensor[i]
         padded_tensor[i, 0:x_len] = sequence[:x_len]
 
+    # padded_tensor = torch.as_tensor(padded_tensor, dtype=torch.long, device='cpu')
     padded_tensor = torch.LongTensor(padded_tensor)
     return padded_tensor, tensor_lengths
 
@@ -40,10 +41,12 @@ def loadDialogue(model, val_file, input_tensor, target_tensor, bs_tensor, db_ten
             zip(val_file['usr'], val_file['sys'], val_file['bs'], val_file['db'])):
         tensor = [model.input_word2index(word) for word in usr.strip(' ').split(' ')] + [
             EOS_token]  # model.input_word2index(word)
-        input_tensor.append(torch.LongTensor(tensor))  # .view(-1, 1))
+        input_tensor.append(torch.as_tensor(tensor, dtype=torch.long, device='cpu'))  # .view(-1, 1))
+        # input_tensor.append(torch.LongTensor(tensor))  # .view(-1, 1))
 
         tensor = [model.output_word2index(word) for word in sys.strip(' ').split(' ')] + [EOS_token]
-        target_tensor.append(torch.LongTensor(tensor))  # .view(-1, 1)
+        target_tensor.append(torch.as_tensor(tensor, dtype=torch.long, device='cpu'))  # .view(-1, 1)
+        # target_tensor.append(torch.LongTensor(tensor))  # .view(-1, 1)
 
         bs_tensor.append([float(belief) for belief in bs])
         db_tensor.append([float(pointer) for pointer in db])
@@ -97,3 +100,29 @@ def timeSince(since, percent):
     now = time.time()
     s = now - since
     return '%s ' % (asMinutes(s))
+
+
+# pp added
+def config_and_print_run_env_info():
+    import sys
+    print('Python version={}'.format(sys.version))
+    print('PyTorch version={}'.format(torch.__version__))
+
+    flag = torch.cuda.is_available()
+    print('torch.cuda.is_available()={}'.format(flag))
+    if flag:
+        from torch.backends import cudnn
+        cudnn.enabled = True
+        cudnn.benchmark = True
+        cudnn.deterministic = True  # if True, the result would keep same; if False, efficiency would be high but results would change slightly
+        # os.environ["CUDA_VISIBLE_DEVICES"] = '1' # choose which device to use
+        # torch.set_default_tensor_type(torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor) # be careful if use
+        print('torch.cuda.current_device()={}'.format(torch.cuda.current_device()))
+        print('torch.cuda.device_count()={}'.format(torch.cuda.device_count()))
+        print('torch.cuda.get_device_name(0)={}'.format(torch.cuda.get_device_name(0)))
+        print('torch.backends.cudnn.version()={}'.format(cudnn.version()))
+        print('torch.version.cuda={}'.format(torch.version.cuda))
+        print('Memory Usage:')
+        print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
+        print('Cached:   ', round(torch.cuda.memory_cached(0)/1024**3,1), 'GB')
+

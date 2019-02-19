@@ -1,0 +1,33 @@
+Model has 574400  parameters.
+TIME: 1441.02644515
+Time since 24m 1s  (Epoch:1 5%) Loss: 0.2514, Loss act: 0.0000, Grad: 0.0604
+Current Valid LOSS: 2.37934188735
+Saving parameters..
+TIME: 5235.46861005
+Time since 112m 43s  (Epoch:2 10%) Loss: 0.2371, Loss act: 0.0000, Grad: 0.0875
+Current Valid LOSS: 2.38534225774
+Saving parameters..
+TIME: 4218.4361341
+Time since 184m 39s  (Epoch:3 15%) Loss: 0.2356, Loss act: 0.0000, Grad: 0.0920
+Current Valid LOSS: 2.32460695577
+Saving parameters..
+TIME: 14917.045989
+Time since 439m 59s  (Epoch:4 20%) Loss: 0.2351, Loss act: 0.0000, Grad: 0.0975
+Current Valid LOSS: 2.35201856613
+Saving parameters..
+TIME: 16544.5620489
+Time since 731m 11s  (Epoch:5 25%) Loss: 0.2333, Loss act: 0.0000, Grad: 0.1045
+Current Valid LOSS: 2.31911538053
+Saving parameters..
+TIME: 15737.546778
+Time since 1008m 52s  (Epoch:6 30%) Loss: 0.2326, Loss act: 0.0000, Grad: 0.0967
+Current Valid LOSS: 2.34387180388
+Saving parameters..
+TIME: 15737.151053
+Time since 1286m 35s  (Epoch:7 35%) Loss: 0.2350, Loss act: 0.0000, Grad: 0.1065
+Current Valid LOSS: 2.3197338537
+Saving parameters..
+TIME: 15794.901401
+Time since 1565m 13s  (Epoch:8 40%) Loss: 0.2336, Loss act: 0.0000, Grad: 0.1017
+Current Valid LOSS: 2.34318337989
+Saving parameters..

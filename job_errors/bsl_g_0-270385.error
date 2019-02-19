@@ -1,0 +1,24 @@
+/home/jpei/anaconda3/envs/multiwoz/lib/python2.7/site-packages/torch/nn/_reduction.py:49: UserWarning: size_average and reduce args will be deprecated, please use reduction='mean' instead.
+  warnings.warn(warning.format(ret))
+Traceback (most recent call last):
+  File "train.py", line 176, in <module>
+    trainIters(model, n_epochs=args.max_epochs, args=args)
+  File "train.py", line 113, in trainIters
+    print_loss_total, print_act_total, print_grad_total = train(print_loss_total, print_act_total, print_grad_total, input_tensor, target_tensor, bs_tensor, db_tensor)
+  File "train.py", line 74, in train
+    bs_tensor, name)
+  File "/home/jpei/multiwoz-without-changes/model/model.py", line 334, in train
+    proba, _, decoded_sent = self.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor)
+  File "/home/jpei/multiwoz-without-changes/model/model.py", line 367, in forward
+    encoder_outputs, encoder_hidden = self.encoder(input_tensor, input_lengths)
+  File "/home/jpei/anaconda3/envs/multiwoz/lib/python2.7/site-packages/torch/nn/modules/module.py", line 489, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/home/jpei/multiwoz-without-changes/model/model.py", line 109, in forward
+    embedded = self.embedding(input_seqs)
+  File "/home/jpei/anaconda3/envs/multiwoz/lib/python2.7/site-packages/torch/nn/modules/module.py", line 489, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/home/jpei/anaconda3/envs/multiwoz/lib/python2.7/site-packages/torch/nn/modules/sparse.py", line 118, in forward
+    self.norm_type, self.scale_grad_by_freq, self.sparse)
+  File "/home/jpei/anaconda3/envs/multiwoz/lib/python2.7/site-packages/torch/nn/functional.py", line 1454, in embedding
+    return torch.embedding(weight, input, padding_idx, scale_grad_by_freq, sparse)
+RuntimeError: Expected object of backend CUDA but got backend CPU for argument #3 'index'
