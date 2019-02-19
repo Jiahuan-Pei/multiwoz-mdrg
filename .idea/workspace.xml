@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="beb5fe9d-cce8-41d5-a7f7-00537eddad6d" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/model/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/model/model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/util.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/util.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -18,7 +16,7 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/train.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="152">
@@ -26,6 +24,15 @@
               <folding>
                 <element signature="e#0#65#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/.gitignore">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="112">
+              <caret line="4" column="6" selection-start-line="4" selection-start-column="6" selection-end-line="4" selection-end-column="6" />
             </state>
           </provider>
         </entry>
@@ -92,7 +99,6 @@
       <find>input_lengths</find>
       <find>self.encoder</find>
       <find>torch.as_</find>
-      <find>torch.as</find>
       <find>torch</find>
       <find>torch.te</find>
       <find>no_cuda</find>
@@ -113,6 +119,7 @@
       <find>loss</find>
       <find>pdb.</find>
       <find>act</find>
+      <find>torch.as</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -129,6 +136,7 @@
         <option value="$PROJECT_DIR$/utils/util.py" />
         <option value="$PROJECT_DIR$/model/evaluator.py" />
         <option value="$PROJECT_DIR$/test.py" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -258,12 +266,12 @@
       <option name="presentableId" value="Default" />
       <updated>1550243701563</updated>
       <workItem from="1550243705026" duration="2822000" />
-      <workItem from="1550273121983" duration="48836000" />
+      <workItem from="1550273121983" duration="49369000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="51658000" />
+    <option name="totallyTimeSpent" value="52191000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -275,9 +283,10 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="16" y="82" width="1440" height="877" extended-state="1" />
+    <frame x="38" y="23" width="1440" height="877" extended-state="0" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2532189" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2532189" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -289,9 +298,9 @@
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32961586" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" weight="0.32961586" />
-      <window_info active="true" anchor="bottom" id="File Transfer" order="9" visible="true" weight="0.30052492" />
+      <window_info anchor="bottom" id="File Transfer" order="9" weight="0.30052492" />
       <window_info anchor="bottom" id="Database Changes" order="10" />
-      <window_info anchor="bottom" id="Terminal" order="11" weight="0.24671917" />
+      <window_info anchor="bottom" id="Terminal" order="11" visible="true" weight="0.29002625" />
       <window_info anchor="bottom" id="Event Log" order="12" side_tool="true" />
       <window_info anchor="bottom" id="Python Console" order="13" weight="0.32961586" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
@@ -450,6 +459,13 @@
           <folding>
             <element signature="e#0#65#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="112">
+          <caret line="4" column="6" selection-start-line="4" selection-start-column="6" selection-end-line="4" selection-end-column="6" />
         </state>
       </provider>
     </entry>
