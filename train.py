@@ -16,49 +16,54 @@ from model.model import Model
 # pp added: print out env
 util.config_and_print_run_env_info()
 
-parser = argparse.ArgumentParser(description='S2S')
-parser.add_argument('--batch_size', type=int, default=64, metavar='N', help='input batch size for training (default: 128)')
-parser.add_argument('--vocab_size', type=int, default=400, metavar='V')
+parser = argparse.ArgumentParser(description='multiwoz-bsl')
+# Group args
+# 1. Data
+data_arg = parser.add_argument_group(title='Data')
+data_arg.add_argument('--data_dir', type=str, default='data', help='the root directory of data')
+data_arg.add_argument('--log_dir', type=str, default='logs')
 
-parser.add_argument('--use_attn', type=util.str2bool, nargs='?', const=True, default=True) # F
-parser.add_argument('--attention_type', type=str, default='bahdanau')
-parser.add_argument('--use_emb',  type=util.str2bool, nargs='?', const=True, default=False)
+# 2.Network
+net_arg = parser.add_argument_group(title='Network')
+net_arg.add_argument('--cell_type', type=str, default='lstm')
+net_arg.add_argument('--attention_type', type=str, default='bahdanau')
+net_arg.add_argument('--depth', type=int, default=1, help='depth of rnn')
+net_arg.add_argument('--emb_size', type=int, default=50)
+net_arg.add_argument('--hid_size_enc', type=int, default=150)
+net_arg.add_argument('--hid_size_dec', type=int, default=150)
+net_arg.add_argument('--hid_size_pol', type=int, default=150)
+net_arg.add_argument('--max_len', type=int, default=50)
+net_arg.add_argument('--vocab_size', type=int, default=400, metavar='V')
+net_arg.add_argument('--use_attn', type=util.str2bool, nargs='?', const=True, default=True) # F
+net_arg.add_argument('--use_emb',  type=util.str2bool, nargs='?', const=True, default=False)
 
-parser.add_argument('--emb_size', type=int, default=50)
-parser.add_argument('--hid_size_enc', type=int, default=150)
-parser.add_argument('--hid_size_dec', type=int, default=150)
-parser.add_argument('--hid_size_pol', type=int, default=150)
-parser.add_argument('--db_size', type=int, default=30)
-parser.add_argument('--bs_size', type=int, default=94)
+# 3.Training
+train_arg = parser.add_argument_group(title='Training')
+train_arg.add_argument('--mode', type=str, default='train', help='training or testing: test, train, RL')
+train_arg.add_argument('--optim', type=str, default='adam')
+train_arg.add_argument('--max_epochs', type=int, default=20) # 15
+train_arg.add_argument('--lr_rate', type=float, default=0.005)
+train_arg.add_argument('--lr_decay', type=float, default=0.0)
+train_arg.add_argument('--l2_norm', type=float, default=0.00001)
+train_arg.add_argument('--clip', type=float, default=5.0, help='clip the gradient by norm')
+train_arg.add_argument('--teacher_ratio', type=float, default=1.0, help='probability of using targets for learning')
+train_arg.add_argument('--dropout', type=float, default=0.0)
+train_arg.add_argument('--early_stop_count', type=int, default=2)
+train_arg.add_argument('--epoch_load', type=int, default=0)
+train_arg.add_argument('--load_param', type=util.str2bool, nargs='?', const=True, default=False)
+train_arg.add_argument('--model_dir', type=str, default='results/bsl_g/model/')
+train_arg.add_argument('--model_name', type=str, default='translate.ckpt')
+train_arg.add_argument('--train_output', type=str, default='data/train_dials/', help='Training output dir path')
 
-parser.add_argument('--cell_type', type=str, default='lstm')
-parser.add_argument('--depth', type=int, default=1, help='depth of rnn')
-parser.add_argument('--max_len', type=int, default=50)
+# 4. MISC
+misc_arg = parser.add_argument_group('MISC')
+misc_arg.add_argument('--seed', type=int, default=0, metavar='S', help='random seed (default: 1)')
+misc_arg.add_argument('--batch_size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
+misc_arg.add_argument('--db_size', type=int, default=30)
+misc_arg.add_argument('--bs_size', type=int, default=94)
+misc_arg.add_argument('--no_cuda',  type=util.str2bool, nargs='?', const=True, default=False)
 
-parser.add_argument('--optim', type=str, default='adam')
-parser.add_argument('--lr_rate', type=float, default=0.005)
-parser.add_argument('--lr_decay', type=float, default=0.0)
-parser.add_argument('--l2_norm', type=float, default=0.00001)
-parser.add_argument('--clip', type=float, default=5.0, help='clip the gradient by norm')
-
-parser.add_argument('--teacher_ratio', type=float, default=1.0, help='probability of using targets for learning')
-parser.add_argument('--dropout', type=float, default=0.0)
-
-parser.add_argument('--no_cuda',  type=util.str2bool, nargs='?', const=True, default=False)
-
-parser.add_argument('--seed', type=int, default=0, metavar='S', help='random seed (default: 1)')
-parser.add_argument('--train_output', type=str, default='data/train_dials/', help='Training output dir path')
-
-parser.add_argument('--max_epochs', type=int, default=20) # 15
-parser.add_argument('--early_stop_count', type=int, default=2)
-parser.add_argument('--model_dir', type=str, default='results/bsl_g/model/')
-parser.add_argument('--model_name', type=str, default='translate.ckpt')
-
-parser.add_argument('--load_param', type=util.str2bool, nargs='?', const=True, default=False)
-parser.add_argument('--epoch_load', type=int, default=0)
-
-parser.add_argument('--mode', type=str, default='train', help='training or testing: test, train, RL')
-
+# 5. Here add new args
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -163,13 +168,13 @@ def trainIters(model, n_epochs=10, args=args):
 
 def loadDictionaries():
     # load data and dictionaries
-    with open('data/input_lang.index2word.json') as f:
+    with open('{}/input_lang.index2word.json'.format(args.data_dir)) as f:
         input_lang_index2word = json.load(f)
-    with open('data/input_lang.word2index.json') as f:
+    with open('{}/input_lang.word2index.json'.format(args.data_dir)) as f:
         input_lang_word2index = json.load(f)
-    with open('data/output_lang.index2word.json') as f:
+    with open('{}/output_lang.index2word.json'.format(args.data_dir)) as f:
         output_lang_index2word = json.load(f)
-    with open('data/output_lang.word2index.json') as f:
+    with open('{}/output_lang.word2index.json'.format(args.data_dir)) as f:
         output_lang_word2index = json.load(f)
 
     return input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index
@@ -178,11 +183,11 @@ def loadDictionaries():
 if __name__ == '__main__':
     input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = loadDictionaries()
     # Load training file list:
-    with open('data/train_dials.json') as outfile:
+    with open('{}/train_dials.json'.format(args.data_dir)) as outfile:
         train_dials = json.load(outfile)
 
     # Load validation file list:
-    with open('data/val_dials.json') as outfile:
+    with open('{}/val_dials.json'.format(args.data_dir)) as outfile:
         val_dials = json.load(outfile)
 
     model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index)
