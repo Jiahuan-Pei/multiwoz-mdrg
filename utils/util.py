@@ -10,6 +10,7 @@ import math
 import time
 import numpy as np
 import torch
+import random
 
 # DEFINE special tokens
 SOS_token = 0
@@ -30,8 +31,8 @@ def padSequence(tensor):
         sequence = tensor[i]
         padded_tensor[i, 0:x_len] = sequence[:x_len]
 
-    # padded_tensor = torch.as_tensor(padded_tensor, dtype=torch.long, device='cpu')
-    padded_tensor = torch.LongTensor(padded_tensor)
+    padded_tensor = torch.as_tensor(padded_tensor, dtype=torch.long)
+    # padded_tensor = torch.LongTensor(padded_tensor)
     return padded_tensor, tensor_lengths
 
 
@@ -102,8 +103,8 @@ def timeSince(since, percent):
     return '%s ' % (asMinutes(s))
 
 
-# pp added
-def config_and_print_run_env_info():
+# pp added -- Start
+def get_env_info():
     import sys
     print('Python version={}'.format(sys.version))
     print('PyTorch version={}'.format(torch.__version__))
@@ -126,3 +127,26 @@ def config_and_print_run_env_info():
         print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
         print('Cached:   ', round(torch.cuda.memory_cached(0)/1024**3,1), 'GB')
 
+def get_ms():
+    return time.time() * 1000
+
+def init_seed(seed=None):
+    if seed is None:
+        seed = int(get_ms() // 1000)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    random.seed(seed)
+
+def loadDictionaries(mdir):
+    # load data and dictionaries
+    with open('{}/input_lang.index2word.json'.format(mdir)) as f:
+        input_lang_index2word = json.load(f)
+    with open('{}/input_lang.word2index.json'.format(mdir)) as f:
+        input_lang_word2index = json.load(f)
+    with open('{}/output_lang.index2word.json'.format(mdir)) as f:
+        output_lang_index2word = json.load(f)
+    with open('{}/output_lang.word2index.json'.format(mdir)) as f:
+        output_lang_word2index = json.load(f)
+
+    return input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index
+# pp added -- End

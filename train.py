@@ -14,14 +14,17 @@ from utils import util
 from model.model import Model
 
 # pp added: print out env
-util.config_and_print_run_env_info()
+util.get_env_info()
 
-parser = argparse.ArgumentParser(description='multiwoz-bsl')
+parser = argparse.ArgumentParser(description='multiwoz-bsl-tr')
 # Group args
-# 1. Data
+# 1. Data & Dirs
 data_arg = parser.add_argument_group(title='Data')
 data_arg.add_argument('--data_dir', type=str, default='data', help='the root directory of data')
 data_arg.add_argument('--log_dir', type=str, default='logs')
+data_arg.add_argument('--model_dir', type=str, default='results/bsl_g/model/')
+data_arg.add_argument('--model_name', type=str, default='translate.ckpt')
+data_arg.add_argument('--train_output', type=str, default='data/train_dials/', help='Training output dir path')
 
 # 2.Network
 net_arg = parser.add_argument_group(title='Network')
@@ -37,8 +40,8 @@ net_arg.add_argument('--vocab_size', type=int, default=400, metavar='V')
 net_arg.add_argument('--use_attn', type=util.str2bool, nargs='?', const=True, default=True) # F
 net_arg.add_argument('--use_emb',  type=util.str2bool, nargs='?', const=True, default=False)
 
-# 3.Training
-train_arg = parser.add_argument_group(title='Training')
+# 3.Train
+train_arg = parser.add_argument_group(title='Train')
 train_arg.add_argument('--mode', type=str, default='train', help='training or testing: test, train, RL')
 train_arg.add_argument('--optim', type=str, default='adam')
 train_arg.add_argument('--max_epochs', type=int, default=20) # 15
@@ -51,9 +54,7 @@ train_arg.add_argument('--dropout', type=float, default=0.0)
 train_arg.add_argument('--early_stop_count', type=int, default=2)
 train_arg.add_argument('--epoch_load', type=int, default=0)
 train_arg.add_argument('--load_param', type=util.str2bool, nargs='?', const=True, default=False)
-train_arg.add_argument('--model_dir', type=str, default='results/bsl_g/model/')
-train_arg.add_argument('--model_name', type=str, default='translate.ckpt')
-train_arg.add_argument('--train_output', type=str, default='data/train_dials/', help='Training output dir path')
+
 
 # 4. MISC
 misc_arg = parser.add_argument_group('MISC')
@@ -67,9 +68,11 @@ misc_arg.add_argument('--no_cuda',  type=util.str2bool, nargs='?', const=True, d
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
-torch.manual_seed(args.seed)
-device = torch.device("cuda" if args.cuda else "cpu")
 print('args.cuda={}'.format(args.cuda))
+device = torch.device("cuda" if args.cuda else "cpu")
+
+torch.manual_seed(args.seed)
+util.init_seed(args.seed)
 
 
 def train(print_loss_total,print_act_total, print_grad_total, input_tensor, target_tensor, bs_tensor, db_tensor, name=None):
@@ -166,22 +169,8 @@ def trainIters(model, n_epochs=10, args=args):
         model.saveModel(epoch)
 
 
-def loadDictionaries():
-    # load data and dictionaries
-    with open('{}/input_lang.index2word.json'.format(args.data_dir)) as f:
-        input_lang_index2word = json.load(f)
-    with open('{}/input_lang.word2index.json'.format(args.data_dir)) as f:
-        input_lang_word2index = json.load(f)
-    with open('{}/output_lang.index2word.json'.format(args.data_dir)) as f:
-        output_lang_index2word = json.load(f)
-    with open('{}/output_lang.word2index.json'.format(args.data_dir)) as f:
-        output_lang_word2index = json.load(f)
-
-    return input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index
-
-
 if __name__ == '__main__':
-    input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = loadDictionaries()
+    input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = util.loadDictionaries(mdir=args.data_dir)
     # Load training file list:
     with open('{}/train_dials.json'.format(args.data_dir)) as outfile:
         train_dials = json.load(outfile)

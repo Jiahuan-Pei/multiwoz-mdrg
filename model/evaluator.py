@@ -38,9 +38,12 @@ def parseGoal(goal, d, domain):
     return goal
 
 
-def evaluateModel(dialogues, val_dials, mode='valid'):
+def evaluateModel(dialogues, val_dials, delex_path, mode='valid'):
     """Gathers statistics for the whole sets."""
-    fin1 = file('data/multi-woz/delex.json')
+    try:
+        fin1 = file(delex_path)
+    except:
+        print('cannot find the delex file!=', delex_path)
     delex_dialogues = json.load(fin1)
     successes, matches = 0, 0
     total = 0
