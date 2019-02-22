@@ -1,5 +1,6 @@
 *.pyc
 .idea/*
+.idea/workspace.xml
 
 data/*
 db/*
