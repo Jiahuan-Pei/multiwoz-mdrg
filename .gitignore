@@ -1,4 +1,7 @@
 *.pyc
+model/*.pyc
+utils/*.pyc
+
 .idea/*
 .idea/workspace.xml
 
