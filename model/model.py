@@ -291,7 +291,7 @@ class Model(nn.Module):
         self.attn_type = args.attention_type
 
         self.dropout = args.dropout
-        self.device = torch.device("cuda" if args.cuda else "cpu")
+        # self.device = torch.device("cuda" if args.cuda else "cpu")
 
         self.model_dir = args.model_dir
         self.model_name = args.model_name
@@ -316,15 +316,15 @@ class Model(nn.Module):
 
     def build_model(self):
         self.encoder = EncoderRNN(len(self.input_lang_index2word), self.emb_size, self.hid_size_enc,
-                                  self.cell_type, self.depth, self.dropout).to(self.device)
+                                  self.cell_type, self.depth, self.dropout)
 
-        self.policy = policy.DefaultPolicy(self.hid_size_pol, self.hid_size_enc, self.db_size, self.bs_size).to(self.device)
+        self.policy = policy.DefaultPolicy(self.hid_size_pol, self.hid_size_enc, self.db_size, self.bs_size)
 
         if self.use_attn:
             if self.attn_type == 'bahdanau':
-                self.decoder = SeqAttnDecoderRNN(self.emb_size, self.hid_size_dec, len(self.output_lang_index2word), self.cell_type, self.dropout, self.max_len).to(self.device)
+                self.decoder = SeqAttnDecoderRNN(self.emb_size, self.hid_size_dec, len(self.output_lang_index2word), self.cell_type, self.dropout, self.max_len)
         else:
-            self.decoder = DecoderRNN(self.emb_size, self.hid_size_dec, len(self.output_lang_index2word), self.cell_type, self.dropout).to(self.device)
+            self.decoder = DecoderRNN(self.emb_size, self.hid_size_dec, len(self.output_lang_index2word), self.cell_type, self.dropout)
 
         if self.args.mode == 'train':
             self.gen_criterion = nn.NLLLoss(ignore_index=3, size_average=True)  # logsoftmax is done in decoder part
@@ -374,10 +374,10 @@ class Model(nn.Module):
         # Teacher forcing: Feed the target as the next input
         _, target_len = target_tensor.size()
 
-        decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long, device=self.device)
+        decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long)
         # decoder_input = torch.LongTensor([[SOS_token] for _ in range(batch_size)], device=self.device)
 
-        proba = torch.zeros(batch_size, target_length, self.vocab_size).to(self.device)  # [B,T,V]
+        proba = torch.zeros(batch_size, target_length, self.vocab_size)  # [B,T,V]
 
         for t in range(target_len):
             decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs)
@@ -425,7 +425,7 @@ class Model(nn.Module):
                 self.topk = 1
                 endnodes = []  # stored end nodes
                 number_required = min((self.topk + 1), self.topk - len(endnodes))
-                decoder_input = torch.as_tensor([[SOS_token]], dtype=torch.long, device=self.device)
+                decoder_input = torch.as_tensor([[SOS_token]], dtype=torch.long)
                 # decoder_input = torch.LongTensor([[SOS_token]], device=self.device)
 
                 # starting node hidden vector, prevNode, wordid, logp, leng,
@@ -506,7 +506,7 @@ class Model(nn.Module):
         decoded_sentences = []
         batch_size, seq_len = target_tensor.size()
         # pp added
-        decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long, device=self.device)
+        decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long)
         # decoder_input = torch.LongTensor([[SOS_token] for _ in range(batch_size)], device=self.device)
 
         decoded_words = torch.zeros((batch_size, self.max_len))

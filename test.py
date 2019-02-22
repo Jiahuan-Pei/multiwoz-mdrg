@@ -65,6 +65,7 @@ def loadModelAndData(num):
 
     # Reload existing checkpoint
     model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index)
+    model = model.to(device)
     if args.load_param:
         model.loadModel(iter=num)
 

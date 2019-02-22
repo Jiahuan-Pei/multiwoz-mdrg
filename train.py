@@ -24,7 +24,7 @@ data_arg.add_argument('--data_dir', type=str, default='data', help='the root dir
 data_arg.add_argument('--log_dir', type=str, default='logs')
 data_arg.add_argument('--model_dir', type=str, default='results/bsl_g/model/')
 data_arg.add_argument('--model_name', type=str, default='translate.ckpt')
-data_arg.add_argument('--train_output', type=str, default='data/train_dials/', help='Training output dir path')
+data_arg.add_argument('--train_output', type=str, default='results/bsl_g/data/train_dials/', help='Training output dir path')
 
 # 2.Network
 net_arg = parser.add_argument_group(title='Network')
@@ -180,6 +180,7 @@ if __name__ == '__main__':
         val_dials = json.load(outfile)
 
     model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index)
+    model = model.to(device)
     if args.load_param:
         model.loadModel(args.epoch_load)
 
