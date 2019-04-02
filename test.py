@@ -129,7 +129,7 @@ def decode(num=1):
             output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
                                                         db_tensor, bs_tensor, mask_tensor)
 
-            valid_loss += 0
+            valid_loss += loss_sentence
             val_dials_gen[name] = output_words
 
         print('Current VALID LOSS:', valid_loss)
@@ -155,7 +155,7 @@ def decode(num=1):
             input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
             output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
                                                         db_tensor, bs_tensor, mask_tensor)
-            test_loss += 0
+            test_loss += loss_sentence
             test_dials_gen[name] = output_words
 
         test_loss /= len(test_dials)
@@ -189,7 +189,8 @@ def decodeWrapper():
     for ii in range(1, args.no_models + 1):
         print(70 * '-' + 'EVALUATING EPOCH %s' % ii)
         # args.model_path = args.model_path + '-' + str(ii)
-        decode(ii)
+        with torch.set_grad_enabled(False):
+            decode(ii)
         # try:
         #     decode(ii, intent2index)
         # except:

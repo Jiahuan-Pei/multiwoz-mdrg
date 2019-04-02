@@ -97,7 +97,8 @@ def evaluateModel(dialogues, val_dials, delex_path, mode='valid'):
             count_wrong_len += 1
             print('wrong length!!!')
             # print(model_turns)
-    print('count_wrong_len_ratio={}/{}'.format(count_wrong_len, len(dialogues)))
+    if count_wrong_len:
+        print('count_wrong_len_ratio={}/{}'.format(count_wrong_len, len(dialogues)))
     # Print results
     if mode == 'valid':
         try: print "Valid BLUES SCORE %.10f" % bscorer.score(model_corpus, corpus)
