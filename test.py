@@ -145,7 +145,7 @@ def decode(num=1):
         test_dials_gen = {}
         test_loss = 0
         for name, test_file in test_dials.items():
-            loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
+            loader = multiwoz_dataloader.get_loader_by_dialogue(test_file, name,
                                                               input_lang_word2index, output_lang_word2index,
                                                               args.intent_type, intent2index)
             data = iter(loader).next()
