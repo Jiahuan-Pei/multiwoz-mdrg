@@ -14,6 +14,7 @@ import torch
 from utils import util
 from model.evaluator import evaluateModel
 from model.model import Model
+from utils.util import detected_device
 
 # pp added: print out env
 util.get_env_info()
@@ -21,6 +22,7 @@ util.get_env_info()
 parser = argparse.ArgumentParser(description='multiwoz-bsl-te')
 # 1. Data & Dir
 data_arg = parser.add_argument_group('Data')
+data_arg.add_argument('--data_dir', type=str, default='data', help='the root directory of data')
 # data_arg.add_argument('--model_path', type=str, default='results/bsl_g/model/translate.ckpt', help='Path to a specific model checkpoint.')
 data_arg.add_argument('--model_dir', type=str, default='results/bsl_g/model/', help='Path to a specific model checkpoint')
 # parser.add_argument('--original', type=str, default='results/bsl_g/model/', help='Original dir.')
@@ -32,16 +34,17 @@ data_arg.add_argument('--decode_output', type=str, default='results/bsl_g/data/t
 misc_arg = parser.add_argument_group('Misc')
 misc_arg.add_argument('--dropout', type=float, default=0.0)
 misc_arg.add_argument('--use_emb', type=str, default='False')
-misc_arg.add_argument('--no_cuda', type=util.str2bool, nargs='?', const=True, default=False, help='if no cuda')
 misc_arg.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
 misc_arg.add_argument('--no_models', type=int, default=20, help='how many models to evaluate')
 misc_arg.add_argument('--beam_width', type=int, default=10, help='Beam width used in beamsearch')
 misc_arg.add_argument('--write_n_best', type=util.str2bool, nargs='?', const=True, default=False, help='Write n-best list (n=beam_width)')
+# 3. Here add new args
+new_arg = parser.add_argument_group('New')
+new_arg.add_argument('--intent_type', type=str, default=None, help='separate experts by intents: None, domain, sysact or domain_act') # pp added
 
 args = parser.parse_args()
-args.cuda = not args.no_cuda and torch.cuda.is_available()
-print('args.cuda={}'.format(args.cuda))
-device = torch.device("cuda" if args.cuda else "cpu")
+args.device = "cuda" if torch.cuda.is_available() else "cpu"
+print('args.device={}'.format(args.device))
 
 # torch.manual_seed(args.seed)
 util.init_seed(args.seed)
@@ -59,13 +62,13 @@ def load_config(args):
     return config
 
 
-def loadModelAndData(num):
+def loadModelAndData(num, intent2index=None):
     # Load dictionaries
     input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = util.loadDictionaries(mdir=args.data_dir)
 
     # Reload existing checkpoint
-    model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index)
-    model = model.to(device)
+    model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index, intent2index)
+    model = model.to(detected_device)
     if args.load_param:
         model.loadModel(iter=num)
 
@@ -82,19 +85,22 @@ def loadModelAndData(num):
     else:
         os.makedirs(args.valid_output)
 
-    # Load validation file list:
+    # # Load validation file list:
     with open('{}/val_dials.json'.format(args.data_dir)) as outfile:
         val_dials = json.load(outfile)
-
-    # Load test file list:
+    #
+    # # Load test file list:
     with open('{}/test_dials.json'.format(args.data_dir)) as outfile:
         test_dials = json.load(outfile)
+    # valid_loader = multiwoz_dataloader.get_loader('{}/val_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index)
+    # test_loader = multiwoz_dataloader.get_loader('{}/test_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index)
+
     return model, val_dials, test_dials
 
 
-def decode(num=1):
+def decode(num=1, intent2index=None):
 
-    model, val_dials, test_dials = loadModelAndData(num)
+    model, val_dials, test_dials = loadModelAndData(num, intent2index)
 
     delex_path = '%s/multi-woz/delex.json' % args.data_dir
 
@@ -111,24 +117,25 @@ def decode(num=1):
         val_dials_gen = {}
         valid_loss = 0
         for name, val_file in val_dials.items():
-            input_tensor = [];  target_tensor = [];bs_tensor = [];db_tensor = []
-            input_tensor, target_tensor, bs_tensor, db_tensor = util.loadDialogue(model, val_file, input_tensor, target_tensor, bs_tensor, db_tensor)
+            input_tensor = [];  target_tensor = [];bs_tensor = [];db_tensor = []; mask_tensor = []
+            input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor = util.loadDialogue(model, val_file, input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor, intent2index)
             # create an empty matrix with padding tokens
             input_tensor, input_lengths = util.padSequence(input_tensor)
             target_tensor, target_lengths = util.padSequence(target_tensor)
-            bs_tensor = torch.tensor(bs_tensor, dtype=torch.float, device=device)
-            db_tensor = torch.tensor(db_tensor, dtype=torch.float, device=device)
+            bs_tensor = torch.as_tensor(bs_tensor, dtype=torch.float, device=detected_device)
+            db_tensor = torch.as_tensor(db_tensor, dtype=torch.float, device=detected_device)
+            mask_tensor = torch.stack(mask_tensor).permute((1, 0, 2)) if mask_tensor and mask_tensor != [] else None
 
             # pp added -- start
-            data = input_tensor, target_tensor, bs_tensor, db_tensor
+            data = input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor
             if torch.cuda.is_available():
                 data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in
                         range(len(data))]
-            input_tensor, target_tensor, bs_tensor, db_tensor = data
+            input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor = data
             # pp added -- end
 
             output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
-                                                        db_tensor, bs_tensor)
+                                                        db_tensor, bs_tensor, mask_tensor)
 
             valid_loss += 0
             val_dials_gen[name] = output_words
@@ -146,22 +153,24 @@ def decode(num=1):
         test_dials_gen = {}
         test_loss = 0
         for name, test_file in test_dials.items():
-            input_tensor = [];  target_tensor = [];bs_tensor = [];db_tensor = []
-            input_tensor, target_tensor, bs_tensor, db_tensor = util.loadDialogue(model, test_file, input_tensor, target_tensor, bs_tensor, db_tensor)
+            input_tensor = [];  target_tensor = [];bs_tensor = [];db_tensor = []; mask_tensor = []
+            input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor = util.loadDialogue(model, test_file, input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor, intent2index)
             # create an empty matrix with padding tokens
             input_tensor, input_lengths = util.padSequence(input_tensor)
             target_tensor, target_lengths = util.padSequence(target_tensor)
-            bs_tensor = torch.tensor(bs_tensor, dtype=torch.float, device=device)
-            db_tensor = torch.tensor(db_tensor, dtype=torch.float, device=device)
+            bs_tensor = torch.as_tensor(bs_tensor, dtype=torch.float, device=detected_device)
+            db_tensor = torch.as_tensor(db_tensor, dtype=torch.float, device=detected_device)
+            mask_tensor = torch.stack(mask_tensor).permute((1, 0, 2)) if mask_tensor and mask_tensor != [] else None
+
             # pp added -- start
-            data = input_tensor, target_tensor, bs_tensor, db_tensor
+            data = input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor
             if torch.cuda.is_available():
                 data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in
                         range(len(data))]
-            input_tensor, target_tensor, bs_tensor, db_tensor = data
+            input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor = data
             # pp added -- end
             output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
-                                                        db_tensor, bs_tensor)
+                                                        db_tensor, bs_tensor, mask_tensor)
             test_loss += 0
             test_dials_gen[name] = output_words
 
@@ -180,6 +189,8 @@ def decode(num=1):
 
 
 def decodeWrapper():
+    # pp added: load intents
+    intent2index, index2intent = util.loadIntentDictionaries(intent_type=args.intent_type, intent_file='{}/intents.json'.format(args.data_dir)) if args.intent_type else (None, None)
     # Load config file
     # with open(args.model_path + '.config') as f:
     with open('{}/{}.config'.format(args.model_dir, args.model_name)) as f:
@@ -197,10 +208,11 @@ def decodeWrapper():
     for ii in range(1, args.no_models + 1):
         print(70 * '-' + 'EVALUATING EPOCH %s' % ii)
         # args.model_path = args.model_path + '-' + str(ii)
-        try:
-            decode(ii)
-        except:
-            print('cannot decode')
+        decode(ii, intent2index)
+        # try:
+        #     decode(ii, intent2index)
+        # except:
+        #     print('cannot decode')
 
         # args.model_path = args.original
 

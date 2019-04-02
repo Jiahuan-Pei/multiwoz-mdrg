@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
 import argparse
@@ -10,8 +11,10 @@ import numpy as np
 import torch
 from torch.optim import Adam
 
-from utils import util
+from utils import util, multiwoz_dataloader
 from model.model import Model
+from tqdm import tqdm
+
 
 # pp added: print out env
 util.get_env_info()
@@ -62,36 +65,23 @@ misc_arg.add_argument('--seed', type=int, default=0, metavar='S', help='random s
 misc_arg.add_argument('--batch_size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 misc_arg.add_argument('--db_size', type=int, default=30)
 misc_arg.add_argument('--bs_size', type=int, default=94)
-misc_arg.add_argument('--no_cuda',  type=util.str2bool, nargs='?', const=True, default=False)
 
 # 5. Here add new args
+new_arg = parser.add_argument_group('New')
+new_arg.add_argument('--intent_type', type=str, default=None, help='separate experts by intents: None, domain, sysact or domain_act') # pp added
 
 args = parser.parse_args()
-args.cuda = not args.no_cuda and torch.cuda.is_available()
-print('args.cuda={}'.format(args.cuda))
-device = torch.device("cuda" if args.cuda else "cpu")
-
-torch.manual_seed(args.seed)
+args.device = "cuda" if torch.cuda.is_available() else "cpu"
+detected_device = util.detected_device
+print('args.device={}'.format(args.device))
+print('args.intent_type={}'.format(args.intent_type))
+# pp added: init seed
 util.init_seed(args.seed)
 
 
-def train(print_loss_total,print_act_total, print_grad_total, input_tensor, target_tensor, bs_tensor, db_tensor, name=None):
-    # create an empty matrix with padding tokens
-    input_tensor, input_lengths = util.padSequence(input_tensor)
-    target_tensor, target_lengths = util.padSequence(target_tensor)
-    bs_tensor = torch.as_tensor(bs_tensor, dtype=torch.float, device=device)
-    db_tensor = torch.as_tensor(db_tensor, dtype=torch.float, device=device)
+def train(print_loss_total,print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor=None, name=None):
 
-    # pp added -- start
-    data = input_tensor, target_tensor, bs_tensor, db_tensor
-    if torch.cuda.is_available():
-        data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in
-                range(len(data))]
-    input_tensor, target_tensor, bs_tensor, db_tensor = data
-    # pp added -- end
-
-    loss, loss_acts, grad = model.train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
-                             bs_tensor, name)
+    loss, loss_acts, grad = model.train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
 
     #print(loss, loss_acts)
     print_loss_total += loss
@@ -104,7 +94,7 @@ def train(print_loss_total,print_act_total, print_grad_total, input_tensor, targ
     return print_loss_total, print_act_total, print_grad_total
 
 
-def trainIters(model, n_epochs=10, args=args):
+def trainIters(model, intent2index, n_epochs=10, args=args):
     prev_min_loss, early_stop_count = 1 << 30, args.early_stop_count
     start = time.time()
 
@@ -114,74 +104,76 @@ def trainIters(model, n_epochs=10, args=args):
         # watch out where do you put it
         model.optimizer = Adam(lr=args.lr_rate, params=filter(lambda x: x.requires_grad, model.parameters()), weight_decay=args.l2_norm)
         model.optimizer_policy = Adam(lr=args.lr_rate, params=filter(lambda x: x.requires_grad, model.policy.parameters()), weight_decay=args.l2_norm)
-
-        dials = train_dials.keys()
-        random.shuffle(dials)
-        input_tensor = [];target_tensor = [];bs_tensor = [];db_tensor = []
-        for name in dials:
-            val_file = train_dials[name]
+        # Training
+        for data in train_loader:
             model.optimizer.zero_grad()
             model.optimizer_policy.zero_grad()
+            # Transfer to GPU
+            if torch.cuda.is_available():
+                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+            print_loss_total, print_act_total, print_grad_total = train(print_loss_total, print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor)
 
-            input_tensor, target_tensor, bs_tensor, db_tensor = util.loadDialogue(model, val_file, input_tensor, target_tensor, bs_tensor, db_tensor)
-
-            if len(db_tensor) > args.batch_size:
-                print_loss_total, print_act_total, print_grad_total = train(print_loss_total, print_act_total, print_grad_total, input_tensor, target_tensor, bs_tensor, db_tensor)
-                input_tensor = [];target_tensor = [];bs_tensor = [];db_tensor = [];
-
-        print_loss_avg = print_loss_total / len(train_dials)
-        print_act_total_avg = print_act_total / len(train_dials)
-        print_grad_avg = print_grad_total / len(train_dials)
+        train_len = len(train_loader)
+        print_loss_avg = print_loss_total / train_len
+        print_act_total_avg = print_act_total / train_len
+        print_grad_avg = print_grad_total / train_len
         print('TIME:', time.time() - start_time)
         print('Time since %s (Epoch:%d %d%%) Loss: %.4f, Loss act: %.4f, Grad: %.4f' % (util.timeSince(start, epoch / n_epochs),
                                                             epoch, epoch / n_epochs * 100, print_loss_avg, print_act_total_avg, print_grad_avg))
 
         # VALIDATION
-        valid_loss = 0
-        for name, val_file in val_dials.items():
-            input_tensor = []; target_tensor = []; bs_tensor = [];db_tensor = []
-            input_tensor, target_tensor, bs_tensor, db_tensor = util.loadDialogue(model, val_file, input_tensor,
-                                                                                         target_tensor, bs_tensor,
-                                                                                         db_tensor)
-            # create an empty matrix with padding tokens
-            input_tensor, input_lengths = util.padSequence(input_tensor)
-            target_tensor, target_lengths = util.padSequence(target_tensor)
-            bs_tensor = torch.as_tensor(bs_tensor, dtype=torch.float, device=device)
-            db_tensor = torch.as_tensor(db_tensor, dtype=torch.float, device=device)
+        with torch.set_grad_enabled(False):
+            valid_loss = 0
+            for data in valid_loader:
+                # Transfer to GPU
+                if torch.cuda.is_available():
+                    data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+                input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+                proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
+                                            bs_tensor, mask_tensor)  # pp added: mask_tensor
+                proba = proba.view(-1, model.vocab_size)  # flatten all predictions
+                loss = model.gen_criterion(proba, target_tensor.view(-1))
+                valid_loss += loss.item()
+            valid_len = len(valid_loader)
+            valid_loss /= valid_len
+            print('Current Valid LOSS:', valid_loss)
 
-            # pp added -- start
-            data = input_tensor, target_tensor, bs_tensor, db_tensor
-            if torch.cuda.is_available():
-                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in
-                        range(len(data))]
-            input_tensor, target_tensor, bs_tensor, db_tensor = data
-            # pp added -- end
-
-            proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor)
-            proba = proba.view(-1, model.vocab_size) # flatten all predictions
-            loss = model.gen_criterion(proba, target_tensor.view(-1))
-            valid_loss += loss.item()
-
-
-        valid_loss /= len(val_dials)
-        print('Current Valid LOSS:', valid_loss)
+        # Testing
+        with torch.set_grad_enabled(False):
+            test_loss = 0
+            for data in test_loader:
+                # Transfer to GPU
+                if torch.cuda.is_available():
+                    data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+                input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+                proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
+                                            bs_tensor, mask_tensor)  # pp added: mask_tensor
+                proba = proba.view(-1, model.vocab_size)  # flatten all predictions
+                loss = model.gen_criterion(proba, target_tensor.view(-1))
+                test_loss += loss.item()
+            test_len = len(test_loader)
+            test_loss /= test_len
+            print('Current Test LOSS:', test_loss)
 
         model.saveModel(epoch)
 
 
 if __name__ == '__main__':
     input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = util.loadDictionaries(mdir=args.data_dir)
-    # Load training file list:
-    with open('{}/train_dials.json'.format(args.data_dir)) as outfile:
-        train_dials = json.load(outfile)
 
-    # Load validation file list:
-    with open('{}/val_dials.json'.format(args.data_dir)) as outfile:
-        val_dials = json.load(outfile)
+    # pp added: load intents
+    intent2index, index2intent = util.loadIntentDictionaries(intent_type=args.intent_type, intent_file='{}/intents.json'.format(args.data_dir)) if args.intent_type else (None, None)
 
-    model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index)
-    model = model.to(device)
+    # pp added: data loaders
+    train_loader = multiwoz_dataloader.get_loader('{}/train_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index, batch_size=args.batch_size)
+    valid_loader = multiwoz_dataloader.get_loader('{}/val_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index)
+    test_loader = multiwoz_dataloader.get_loader('{}/test_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index)
+
+    model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index, intent2index, index2intent)
+    model = model.to(detected_device)
     if args.load_param:
         model.loadModel(args.epoch_load)
 
-    trainIters(model, n_epochs=args.max_epochs, args=args)
+
+    trainIters(model, intent2index, n_epochs=args.max_epochs, args=args)
