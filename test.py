@@ -11,7 +11,7 @@ import time
 import numpy as np
 import torch
 
-from utils import util
+from utils import util, multiwoz_dataloader
 from model.evaluator import evaluateModel
 from model.model import Model
 from utils.util import detected_device
@@ -62,9 +62,11 @@ def load_config(args):
     return config
 
 
-def loadModelAndData(num, intent2index=None):
+def loadModelAndData(num):
     # Load dictionaries
     input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = util.loadDictionaries(mdir=args.data_dir)
+    # pp added: load intents
+    intent2index, index2intent = util.loadIntentDictionaries(intent_type=args.intent_type, intent_file='{}/intents.json'.format(args.data_dir)) if args.intent_type else (None, None)
 
     # Reload existing checkpoint
     model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index, intent2index)
@@ -92,15 +94,13 @@ def loadModelAndData(num, intent2index=None):
     # # Load test file list:
     with open('{}/test_dials.json'.format(args.data_dir)) as outfile:
         test_dials = json.load(outfile)
-    # valid_loader = multiwoz_dataloader.get_loader('{}/val_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index)
-    # test_loader = multiwoz_dataloader.get_loader('{}/test_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index)
 
-    return model, val_dials, test_dials
+    return model, val_dials, test_dials, input_lang_word2index, output_lang_word2index, intent2index, index2intent
 
 
-def decode(num=1, intent2index=None):
+def decode(num=1):
 
-    model, val_dials, test_dials = loadModelAndData(num, intent2index)
+    model, val_dials, test_dials, input_lang_word2index, output_lang_word2index, intent2index, index2intent  = loadModelAndData(num)
 
     delex_path = '%s/multi-woz/delex.json' % args.data_dir
 
@@ -117,22 +117,14 @@ def decode(num=1, intent2index=None):
         val_dials_gen = {}
         valid_loss = 0
         for name, val_file in val_dials.items():
-            input_tensor = [];  target_tensor = [];bs_tensor = [];db_tensor = []; mask_tensor = []
-            input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor = util.loadDialogue(model, val_file, input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor, intent2index)
-            # create an empty matrix with padding tokens
-            input_tensor, input_lengths = util.padSequence(input_tensor)
-            target_tensor, target_lengths = util.padSequence(target_tensor)
-            bs_tensor = torch.as_tensor(bs_tensor, dtype=torch.float, device=detected_device)
-            db_tensor = torch.as_tensor(db_tensor, dtype=torch.float, device=detected_device)
-            mask_tensor = torch.stack(mask_tensor).permute((1, 0, 2)) if mask_tensor and mask_tensor != [] else None
-
-            # pp added -- start
-            data = input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor
+            loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
+                                                              input_lang_word2index, output_lang_word2index,
+                                                              args.intent_type, intent2index)
+            data = iter(loader).next()
+            # Transfer to GPU
             if torch.cuda.is_available():
-                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in
-                        range(len(data))]
-            input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor = data
-            # pp added -- end
+                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
 
             output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
                                                         db_tensor, bs_tensor, mask_tensor)
@@ -153,27 +145,18 @@ def decode(num=1, intent2index=None):
         test_dials_gen = {}
         test_loss = 0
         for name, test_file in test_dials.items():
-            input_tensor = [];  target_tensor = [];bs_tensor = [];db_tensor = []; mask_tensor = []
-            input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor = util.loadDialogue(model, test_file, input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor, intent2index)
-            # create an empty matrix with padding tokens
-            input_tensor, input_lengths = util.padSequence(input_tensor)
-            target_tensor, target_lengths = util.padSequence(target_tensor)
-            bs_tensor = torch.as_tensor(bs_tensor, dtype=torch.float, device=detected_device)
-            db_tensor = torch.as_tensor(db_tensor, dtype=torch.float, device=detected_device)
-            mask_tensor = torch.stack(mask_tensor).permute((1, 0, 2)) if mask_tensor and mask_tensor != [] else None
-
-            # pp added -- start
-            data = input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor
+            loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
+                                                              input_lang_word2index, output_lang_word2index,
+                                                              args.intent_type, intent2index)
+            data = iter(loader).next()
+            # Transfer to GPU
             if torch.cuda.is_available():
-                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in
-                        range(len(data))]
-            input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor = data
-            # pp added -- end
+                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
             output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
                                                         db_tensor, bs_tensor, mask_tensor)
             test_loss += 0
             test_dials_gen[name] = output_words
-
 
         test_loss /= len(test_dials)
 
@@ -189,8 +172,6 @@ def decode(num=1, intent2index=None):
 
 
 def decodeWrapper():
-    # pp added: load intents
-    intent2index, index2intent = util.loadIntentDictionaries(intent_type=args.intent_type, intent_file='{}/intents.json'.format(args.data_dir)) if args.intent_type else (None, None)
     # Load config file
     # with open(args.model_path + '.config') as f:
     with open('{}/{}.config'.format(args.model_dir, args.model_name)) as f:
@@ -208,7 +189,7 @@ def decodeWrapper():
     for ii in range(1, args.no_models + 1):
         print(70 * '-' + 'EVALUATING EPOCH %s' % ii)
         # args.model_path = args.model_path + '-' + str(ii)
-        decode(ii, intent2index)
+        decode(ii)
         # try:
         #     decode(ii, intent2index)
         # except:

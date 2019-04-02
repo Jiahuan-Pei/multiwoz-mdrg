@@ -103,21 +103,7 @@ def collate_fn(data, device=torch.device('cpu')):
     #     data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
     return input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor # tensors [batch_size, *]
 
-def DialogueJSON2Tensors(file_path, input_lang_word2index, output_lang_word2index, intent_type, intent2index):
-    m = MultiwozSingleDataset(input_lang_word2index, output_lang_word2index, intent_type, intent2index)
-    dials = json.load(open(file_path))
-    input_tensor = []; target_tensor = []; bs_tensor = []; db_tensor = []; mask_tensor = []
-    for name in dials.keys():
-        val_file = dials[name]
-        s_input_tensor, s_target_tensor, s_bs_tensor, s_db_tensor, s_mask_tensor = m.SingleDialogueJSON2Tensors(val_file)
-        input_tensor.append(s_input_tensor)
-        target_tensor.append(s_target_tensor)
-        bs_tensor.append(s_bs_tensor)
-        db_tensor.append(s_db_tensor)
-        mask_tensor.append(s_mask_tensor)
-    return input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor
-
-def get_loader(file_path, src_word2id, trg_word2id, intent_type=None, intent2index=None, batch_size=10):
+def get_loader(file_path, src_word2id, trg_word2id, intent_type=None, intent2index=None, batch_size=1):
     """Returns data loader for custom dataset.
     """
     dials = json.load(open(file_path))
@@ -132,6 +118,16 @@ def get_loader(file_path, src_word2id, trg_word2id, intent_type=None, intent2ind
     data_loader = DataLoader(dataset=datasets,
                              batch_size=batch_size,
                              shuffle=True,
+                             num_workers=0,
+                             collate_fn=collate_fn)
+    return data_loader
+
+def get_loader_by_dialogue(val_file, name, src_word2id, trg_word2id, intent_type=None, intent2index=None):
+    dataset = MultiwozSingleDataset(val_file, name, src_word2id, trg_word2id, intent_type, intent2index)
+    batch_size = len(dataset)
+    data_loader = DataLoader(dataset=dataset,
+                             batch_size=batch_size,
+                             shuffle=False,
                              num_workers=0,
                              collate_fn=collate_fn)
     return data_loader
