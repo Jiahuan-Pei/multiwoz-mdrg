@@ -17,9 +17,11 @@ SOS_token = 0
 EOS_token = 1
 UNK_token = 2
 PAD_token = 3
+# detected_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 detected_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+default_device = torch.device("cpu")
 
-def padSequence(tensor, device=detected_device):
+def padSequence(tensor, device=default_device):
     pad_token = PAD_token
     tensor_lengths = [len(sentence) for sentence in tensor]
     longest_sent = max(tensor_lengths)
@@ -36,7 +38,7 @@ def padSequence(tensor, device=detected_device):
     return padded_tensor, tensor_lengths
 
 
-def loadDialogue(model, val_file, input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor=None, intent2index=None, device=detected_device):
+def loadDialogue(model, val_file, input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor=None, intent2index=None, device=default_device):
     # Iterate over dialogue
     for idx, (usr, sys, bs, db, acts) in enumerate(
             zip(val_file['usr'], val_file['sys'], val_file['bs'], val_file['db'], val_file['acts'])):

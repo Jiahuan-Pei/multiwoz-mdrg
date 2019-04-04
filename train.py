@@ -10,11 +10,17 @@ from io import open
 import numpy as np
 import torch
 from torch.optim import Adam
+import torch.nn as nn
 
 from utils import util, multiwoz_dataloader
 from model.model import Model
-from tqdm import tqdm
-
+from utils.util import detected_device
+from model.evaluator import evaluateModel
+# from tqdm import tqdm
+# SOS_token = 0
+# EOS_token = 1
+# UNK_token = 2
+# PAD_token = 3
 
 # pp added: print out env
 util.get_env_info()
@@ -65,23 +71,67 @@ misc_arg.add_argument('--seed', type=int, default=0, metavar='S', help='random s
 misc_arg.add_argument('--batch_size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 misc_arg.add_argument('--db_size', type=int, default=30)
 misc_arg.add_argument('--bs_size', type=int, default=94)
+misc_arg.add_argument('--beam_width', type=int, default=10, help='Beam width used in beamsearch')
 
 # 5. Here add new args
 new_arg = parser.add_argument_group('New')
 new_arg.add_argument('--intent_type', type=str, default=None, help='separate experts by intents: None, domain, sysact or domain_act') # pp added
 
 args = parser.parse_args()
-args.device = "cuda" if torch.cuda.is_available() else "cpu"
-detected_device = util.detected_device
+args.device = detected_device.type
 print('args.device={}'.format(args.device))
 print('args.intent_type={}'.format(args.intent_type))
 # pp added: init seed
 util.init_seed(args.seed)
 
+def eval_with_train3(model, val_dials, mode='valid', policy='greedy'):
+    val_dials_gen = {0:{}, 1:{}}
+    valid_loss = {0:0, 1:0}
 
-def train(print_loss_total,print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor=None, name=None):
+    for name, val_file in val_dials.items():
+        loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
+                                                          input_lang_word2index, output_lang_word2index,
+                                                          args.intent_type, intent2index)
+        data = iter(loader).next()
+        # Transfer to GPU
+        if torch.cuda.is_available():
+            data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+        input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
 
-    loss, loss_acts, grad = model.train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
+        for ii in range(2):
+            if ii == 0:
+                if policy != 'greedy':
+                    continue  # added for debug; ignore greedy search part
+                else:
+                    print(50 * '-' + 'GREEDY')
+                    model.beam_search = False
+            else:
+                if policy != 'beam':
+                    continue  # added for debug; ignore greedy search par
+                else:
+                    print(50 * '-' + 'BEAM')
+                    model.beam_search = True
+            output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
+                                                        db_tensor, bs_tensor, mask_tensor)
+
+            valid_loss[ii] += loss_sentence
+            val_dials_gen[ii][name] = output_words
+
+    for ii in range(2):
+        if ii == 0:
+            # continue  # added for debug; ignore greedy search part
+            print(50 * '-' + 'GREEDY')
+            model.beam_search = False
+        else:
+            continue  # added for debug; ignore greedy search par
+            print(50 * '-' + 'BEAM')
+        print('Test - Current {} LOSS:{}'.format(mode, valid_loss[ii]))
+        evaluateModel(val_dials_gen[ii], val_dials, delex_path, mode)
+
+
+def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor=None, name=None):
+
+    loss, loss_acts, grad = model.model_train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
 
     #print(loss, loss_acts)
     print_loss_total += loss
@@ -97,64 +147,86 @@ def train(print_loss_total,print_act_total, print_grad_total, input_tensor, inpu
 def trainIters(model, intent2index, n_epochs=10, args=args):
     prev_min_loss, early_stop_count = 1 << 30, args.early_stop_count
     start = time.time()
-
     for epoch in range(1, n_epochs + 1):
+        print('Epoch=', epoch)
         print_loss_total = 0; print_grad_total = 0; print_act_total = 0  # Reset every print_every
         start_time = time.time()
         # watch out where do you put it
         model.optimizer = Adam(lr=args.lr_rate, params=filter(lambda x: x.requires_grad, model.parameters()), weight_decay=args.l2_norm)
         model.optimizer_policy = Adam(lr=args.lr_rate, params=filter(lambda x: x.requires_grad, model.policy.parameters()), weight_decay=args.l2_norm)
         # Training
-        for data in train_loader:
+        for data in train_loader: # each element of data tuple has [batch_size] samples
             model.optimizer.zero_grad()
             model.optimizer_policy.zero_grad()
             # Transfer to GPU
             if torch.cuda.is_available():
                 data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
             input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
-            print_loss_total, print_act_total, print_grad_total = train(print_loss_total, print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor)
-
-        train_len = len(train_loader)
+            print_loss_total, print_act_total, print_grad_total = trainOne(print_loss_total, print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor)
+        train_len = len(train_loader) # 886 data # len(train_loader.dataset.datasets) # 8423 dialogues
         print_loss_avg = print_loss_total / train_len
         print_act_total_avg = print_act_total / train_len
         print_grad_avg = print_grad_total / train_len
-        print('TIME:', time.time() - start_time)
-        print('Time since %s (Epoch:%d %d%%) Loss: %.4f, Loss act: %.4f, Grad: %.4f' % (util.timeSince(start, epoch / n_epochs),
+        print('Train - TIME:', time.time() - start_time)
+        print('Train - Time since %s (Epoch:%d %d%%) Loss: %.4f, Loss act: %.4f, Grad: %.4f' % (util.timeSince(start, epoch / n_epochs),
                                                             epoch, epoch / n_epochs * 100, print_loss_avg, print_act_total_avg, print_grad_avg))
 
         # VALIDATION
-        with torch.set_grad_enabled(False):
-            valid_loss = 0
-            for data in valid_loader:
-                # Transfer to GPU
-                if torch.cuda.is_available():
-                    data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
-                input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
-                proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
-                                            bs_tensor, mask_tensor)  # pp added: mask_tensor
-                proba = proba.view(-1, model.vocab_size)  # flatten all predictions
-                loss = model.gen_criterion(proba, target_tensor.view(-1))
-                valid_loss += loss.item()
-            valid_len = len(valid_loader)
-            valid_loss /= valid_len
-            print('Current Valid LOSS:', valid_loss)
+        # pp added
+        val_dials_gen = {}
+        valid_loss = 0
+
+        for name, val_file in val_dials.items():
+            loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
+                                                                input_lang_word2index, output_lang_word2index,
+                                                                args.intent_type, intent2index)
+            data = iter(loader).next()
+            # Transfer to GPU
+            if torch.cuda.is_available():
+                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+            proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
+                                        bs_tensor, mask_tensor)  # pp added: mask_tensor
+            proba = proba.view(-1, model.vocab_size)  # flatten all predictions
+            loss = model.gen_criterion(proba, target_tensor.view(-1))
+            valid_loss += loss.item()
+            # pp added: evaluation - Plan A
+            model.eval()
+            output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
+                                                        db_tensor, bs_tensor, mask_tensor)
+            model.train()
+            val_dials_gen[name] = output_words
+        valid_len = len(val_dials) # 1000
+        valid_loss /= valid_len
+        print('Train - Current Valid LOSS:', valid_loss)
+        # pp added: evaluate valid
+        evaluateModel(val_dials_gen, val_dials, delex_path, mode='valid')
 
         # Testing
-        with torch.set_grad_enabled(False):
-            test_loss = 0
-            for data in test_loader:
-                # Transfer to GPU
-                if torch.cuda.is_available():
-                    data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
-                input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
-                proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
-                                            bs_tensor, mask_tensor)  # pp added: mask_tensor
-                proba = proba.view(-1, model.vocab_size)  # flatten all predictions
-                loss = model.gen_criterion(proba, target_tensor.view(-1))
-                test_loss += loss.item()
-            test_len = len(test_loader)
-            test_loss /= test_len
-            print('Current Test LOSS:', test_loss)
+        # pp added
+        model.eval()
+        test_dials_gen ={}
+        for name, test_file in test_dials.items():
+            loader = multiwoz_dataloader.get_loader_by_dialogue(test_file, name,
+                                                                input_lang_word2index, output_lang_word2index,
+                                                                args.intent_type, intent2index)
+            data = iter(loader).next()
+            # Transfer to GPU
+            if torch.cuda.is_available():
+                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+            output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
+                                                        db_tensor, bs_tensor, mask_tensor)
+            test_dials_gen[name] = output_words
+        # pp added: evaluate valid
+        evaluateModel(test_dials_gen, test_dials, delex_path, mode='test')
+
+        # pp added: evaluation - Plan B
+        # print(50 * '=' + 'Evaluating start...')
+        # # eval_with_train(model)
+        # eval_with_train3(model, val_dials, mode='valid')
+        # eval_with_train3(model, test_dials, mode='test')
+        # print(50 * '=' + 'Evaluating end...')
 
         model.saveModel(epoch)
 
@@ -167,10 +239,19 @@ if __name__ == '__main__':
 
     # pp added: data loaders
     train_loader = multiwoz_dataloader.get_loader('{}/train_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index, batch_size=args.batch_size)
-    valid_loader = multiwoz_dataloader.get_loader('{}/val_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index)
-    test_loader = multiwoz_dataloader.get_loader('{}/test_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index)
+    # valid_loader_list = multiwoz_dataloader.get_loader_by_full_dialogue('{}/val_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index)
+    # test_loader_list = multiwoz_dataloader.get_loader_by_full_dialogue('{}/test_dials.json'.format(args.data_dir), input_lang_word2index, output_lang_word2index, args.intent_type, intent2index)
+    # Load validation file list:
+    with open('{}/val_dials.json'.format(args.data_dir)) as outfile:
+        val_dials = json.load(outfile)
+    # Load test file list:
+    with open('{}/test_dials.json'.format(args.data_dir)) as outfile:
+        test_dials = json.load(outfile)
+
+    delex_path = '%s/multi-woz/delex.json' % args.data_dir
 
     model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index, intent2index, index2intent)
+    # model = nn.DataParallel(model, device_ids=[0,1]) # latter for parallel
     model = model.to(detected_device)
     if args.load_param:
         model.loadModel(args.epoch_load)

@@ -16,13 +16,12 @@ from torch import optim
 
 import policy
 
-from utils.util import SOS_token, EOS_token, UNK_token, PAD_token, detected_device
+from utils.util import SOS_token, EOS_token, PAD_token, detected_device
+default_device = detected_device
 # SOS_token = 0
 # EOS_token = 1
 # UNK_token = 2
 # PAD_token = 3
-# detected_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 # Shawn beam search decoding
 class BeamSearchNode(object):
@@ -81,7 +80,7 @@ def whatCellType(input_size, hidden_size, cell_type, dropout_rate):
 
 
 class EncoderRNN(nn.Module):
-    def __init__(self, input_size,  embedding_size, hidden_size, cell_type, depth, dropout, device=detected_device):
+    def __init__(self, input_size,  embedding_size, hidden_size, cell_type, depth, dropout, device=default_device):
         super(EncoderRNN, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -137,7 +136,7 @@ class EncoderRNN(nn.Module):
 
 
 class Attn(nn.Module):
-    def __init__(self, method, hidden_size, device=detected_device):
+    def __init__(self, method, hidden_size, device=default_device):
         super(Attn, self).__init__()
         self.method = method
         self.hidden_size = hidden_size
@@ -173,7 +172,7 @@ class Attn(nn.Module):
 
 
 class SeqAttnDecoderRNN(nn.Module):
-    def __init__(self, embedding_size, hidden_size, output_size, cell_type, dropout_p=0.1, max_length=30, device=detected_device):
+    def __init__(self, embedding_size, hidden_size, output_size, cell_type, dropout_p=0.1, max_length=30, device=default_device):
         super(SeqAttnDecoderRNN, self).__init__()
         # Define parameters
         self.hidden_size = hidden_size
@@ -236,7 +235,7 @@ class SeqAttnDecoderRNN(nn.Module):
         return output, hidden  # , attn_weights
 
 class MoESeqAttnDecoderRNN(nn.Module):
-    def __init__(self, embedding_size, hidden_size, output_size, cell_type, k=1, dropout_p=0.1, max_length=30, device=detected_device):
+    def __init__(self, embedding_size, hidden_size, output_size, cell_type, k=1, dropout_p=0.1, max_length=30, device=default_device):
         super(MoESeqAttnDecoderRNN, self).__init__()
         # Define parameters
         self.hidden_size = hidden_size
@@ -354,7 +353,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         return output, hidden  # , attn_weights
 
 class DecoderRNN(nn.Module):
-    def __init__(self, embedding_size, hidden_size, output_size, cell_type, dropout=0.1, device=detected_device):
+    def __init__(self, embedding_size, hidden_size, output_size, cell_type, dropout=0.1, device=default_device):
         super(DecoderRNN, self).__init__()
         self.device = device
         self.hidden_size = hidden_size
@@ -386,7 +385,7 @@ class DecoderRNN(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index, intent2index=None, index2intent=None, device=detected_device):
+    def __init__(self, args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index, intent2index=None, index2intent=None, device=default_device):
         super(Model, self).__init__()
         self.args = args
         self.max_len = args.max_len
@@ -462,7 +461,7 @@ class Model(nn.Module):
             self.gen_criterion = nn.NLLLoss(ignore_index=PAD_token, reduction='mean')  # logsoftmax is done in decoder part
             self.setOptimizers()
 
-    def train(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None, dial_name=None):
+    def model_train(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None, dial_name=None):
 
         proba, _, decoded_sent = self.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor) # pp added: acts_list
 
@@ -537,6 +536,8 @@ class Model(nn.Module):
         return proba, None, decoded_sent
 
     def predict(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None):
+        # pp added
+        # self.eval()
         with torch.no_grad():
             # ENCODER
             encoder_outputs, encoder_hidden = self.encoder(input_tensor, input_lengths)
@@ -554,7 +555,8 @@ class Model(nn.Module):
 
         if self.beam_search:  # wenqiang style - sequicity
             decoded_sentences = []
-            for idx in range(target_tensor.size(0)):
+            for idx in range(target_tensor.size(0)): # idx is the batch index
+
                 if isinstance(decoder_hiddens, tuple):  # LSTM case
                     decoder_hidden = (decoder_hiddens[0][:,idx, :].unsqueeze(0),decoder_hiddens[1][:,idx, :].unsqueeze(0))
                 else:
@@ -594,7 +596,8 @@ class Model(nn.Module):
                             continue
 
                     # decode for one step using decoder
-                    decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_output, mask_tensor)
+                    mask_tensor_idx = mask_tensor[:, idx, :].unsqueeze(1) if mask_tensor is not None else None
+                    decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_output, mask_tensor_idx)
 
                     log_prob, indexes = torch.topk(decoder_output, self.args.beam_width)
                     nextnodes = []

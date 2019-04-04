@@ -12,6 +12,7 @@ import nltk, sys
 from torch.utils.data import Dataset, DataLoader, ConcatDataset
 from utils.util import *
 import json
+from utils.util import default_device
 
 class MultiwozSingleDataset(Dataset):
     """Custom data.Dataset compatible with data.DataLoader."""
@@ -23,7 +24,7 @@ class MultiwozSingleDataset(Dataset):
         self.trg_word2id = trg_word2id
         self.intent2index = intent2index
         self.intent_type = intent_type
-        self.device = torch.device('cpu') # detected_device
+        self.device = default_device # torch.device('cpu')
         self.input_tensor, self.target_tensor, self.bs_tensor, self.db_tensor, self.mask_tensor = self.SingleDialogueJSON2Tensors()
         self.datalen = self.__len__()
 
@@ -80,12 +81,8 @@ class MultiwozSingleDataset(Dataset):
 
         return input_tensor, target_tensor, bs_tensor, db_tensor, mask_tensor # each one is a list of tensor
 
-def collate_fn(data, device=torch.device('cpu')):
-    """Creates mini-batch tensors from the list of tuples (src_seq, trg_seq).
-    We should build a custom collate_fn rather than using default collate_fn,
-    because merging sequences (including padding) is not supported in default.
-    Seqeuences are padded to the maximum length of mini-batch sequences (dynamic padding).
-    data[batch, tuple]; each element of the tuple is a list of tensor
+def collate_fn(data, device=default_device):
+    """Creates mini-batch tensors from the list of tuples
     """
     # batch.sort(key=lambda x: len(x[1]), reverse=True)
     has_mask_tensor = True if data[0][-1] is not None else False
@@ -104,7 +101,7 @@ def collate_fn(data, device=torch.device('cpu')):
     return input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor # tensors [batch_size, *]
 
 def get_loader(file_path, src_word2id, trg_word2id, intent_type=None, intent2index=None, batch_size=1):
-    """Returns data loader for custom dataset.
+    """Returns data loader for train in turn-level.
     """
     dials = json.load(open(file_path))
     dataset_list = []
@@ -123,14 +120,25 @@ def get_loader(file_path, src_word2id, trg_word2id, intent_type=None, intent2ind
     return data_loader
 
 def get_loader_by_dialogue(val_file, name, src_word2id, trg_word2id, intent_type=None, intent2index=None):
+    '''Return a dataloader for a full dialogue, the batch size is the len of the dialogue'''
     dataset = MultiwozSingleDataset(val_file, name, src_word2id, trg_word2id, intent_type, intent2index)
     batch_size = len(dataset)
     data_loader = DataLoader(dataset=dataset,
                              batch_size=batch_size,
-                             shuffle=False,
+                             shuffle=False, # donnot change the order
                              num_workers=0,
                              collate_fn=collate_fn)
     return data_loader
+
+def get_loader_by_full_dialogue(file_path, src_word2id, trg_word2id, intent_type=None, intent2index=None):
+    '''Return a list of dataloader, each one load a full dialogue data'''
+    dials = json.load(open(file_path))
+    data_loader_list = []
+    for name in dials.keys():
+        val_file = dials[name]
+        data_loader = get_loader_by_dialogue(val_file, name, src_word2id, trg_word2id, intent_type, intent2index)
+        data_loader_list.append(data_loader)
+    return data_loader_list
 
 if __name__ == "__main__":
     data_dir = '../multiwoz-moe/data'

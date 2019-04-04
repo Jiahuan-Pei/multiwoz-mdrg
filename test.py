@@ -107,6 +107,7 @@ def decode(num=1):
     start_time = time.time()
     for ii in range(2):
         if ii == 0:
+            continue  # added for debug; ignore greedy search part
             print(50 * '-' + 'GREEDY')
             model.beam_search = False
         else:
@@ -189,7 +190,7 @@ def decodeWrapper():
     for ii in range(1, args.no_models + 1):
         print(70 * '-' + 'EVALUATING EPOCH %s' % ii)
         # args.model_path = args.model_path + '-' + str(ii)
-        with torch.set_grad_enabled(False):
+        with torch.no_grad():
             decode(ii)
         # try:
         #     decode(ii, intent2index)
