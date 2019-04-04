@@ -537,7 +537,6 @@ class Model(nn.Module):
 
     def predict(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None):
         # pp added
-        # self.eval()
         with torch.no_grad():
             # ENCODER
             encoder_outputs, encoder_hidden = self.encoder(input_tensor, input_lengths)

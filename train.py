@@ -82,11 +82,17 @@ args.device = detected_device.type
 print('args.device={}'.format(args.device))
 print('args.intent_type={}'.format(args.intent_type))
 # pp added: init seed
+print(args)
 util.init_seed(args.seed)
 
 def eval_with_train3(model, val_dials, mode='valid', policy='greedy'):
     val_dials_gen = {0:{}, 1:{}}
     valid_loss = {0:0, 1:0}
+    policy_idx_list = range(2) # both
+    if policy == 'greedy':
+        policy_idx_list = [0]
+    elif policy == 'beam':
+        policy_idx_list = [1]
 
     for name, val_file in val_dials.items():
         loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
@@ -98,33 +104,24 @@ def eval_with_train3(model, val_dials, mode='valid', policy='greedy'):
             data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
         input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
 
-        for ii in range(2):
+        for ii in policy_idx_list:
             if ii == 0:
-                if policy != 'greedy':
-                    continue  # added for debug; ignore greedy search part
-                else:
-                    print(50 * '-' + 'GREEDY')
-                    model.beam_search = False
+                model.beam_search = False
             else:
-                if policy != 'beam':
-                    continue  # added for debug; ignore greedy search par
-                else:
-                    print(50 * '-' + 'BEAM')
-                    model.beam_search = True
+                model.beam_search = True
             output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
                                                         db_tensor, bs_tensor, mask_tensor)
 
             valid_loss[ii] += loss_sentence
             val_dials_gen[ii][name] = output_words
 
-    for ii in range(2):
+    for ii in policy_idx_list:
         if ii == 0:
-            # continue  # added for debug; ignore greedy search part
             print(50 * '-' + 'GREEDY')
             model.beam_search = False
         else:
-            continue  # added for debug; ignore greedy search par
             print(50 * '-' + 'BEAM')
+            model.beam_search = True
         print('Test - Current {} LOSS:{}'.format(mode, valid_loss[ii]))
         evaluateModel(val_dials_gen[ii], val_dials, delex_path, mode)
 
@@ -148,7 +145,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
     prev_min_loss, early_stop_count = 1 << 30, args.early_stop_count
     start = time.time()
     for epoch in range(1, n_epochs + 1):
-        print('Epoch=', epoch)
+        print('~'*50, '\nEpoch=', epoch)
         print_loss_total = 0; print_grad_total = 0; print_act_total = 0  # Reset every print_every
         start_time = time.time()
         # watch out where do you put it
@@ -220,6 +217,8 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
             test_dials_gen[name] = output_words
         # pp added: evaluate valid
         evaluateModel(test_dials_gen, test_dials, delex_path, mode='test')
+
+        model.train()
 
         # pp added: evaluation - Plan B
         # print(50 * '=' + 'Evaluating start...')
