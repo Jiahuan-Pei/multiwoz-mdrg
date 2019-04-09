@@ -14,7 +14,7 @@ import torch.nn as nn
 
 from utils import util, multiwoz_dataloader
 from model.model import Model
-from utils.util import detected_device
+from utils.util import detected_device, PAD_token
 from model.evaluator import evaluateModel
 # from tqdm import tqdm
 # SOS_token = 0
@@ -129,7 +129,22 @@ def eval_with_train3(model, val_dials, mode='valid', policy='greedy'):
 def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor=None, name=None):
 
     loss, loss_acts, grad = model.model_train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
-
+    # pp added: experts' loss
+    # print('@'*20, '\n', target_tensor)
+    if False and mask_tensor is not None:  # data separate by intents
+        gen_loss_list = []
+        if mask_tensor is not None:  # data separate by intents
+            # print(mask_tensor)
+            for mask in mask_tensor:  # each intent has a mask [Batch, 1]
+                target_tensor_i = target_tensor.clone()
+                target_tensor_i = target_tensor_i.masked_fill_(mask, value=PAD_token)
+                # print(mask)
+                # print(target_tensor_i)
+                # print('*'*50)
+                loss_i, loss_acts_i, grad_i = model.model_train(input_tensor, input_lengths, target_tensor_i, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
+                gen_loss_list.append(loss_i)
+        # print('loss', loss, '; mean_experts_loss', torch.mean(torch.tensor(gen_loss_list)), '\ngen_loss_list', ['%.4f' % s if s!=0 else '0' for s in gen_loss_list])
+        loss = 0.5*loss + 0.5*torch.mean(torch.tensor(gen_loss_list))
     #print(loss, loss_acts)
     print_loss_total += loss
     print_act_total += loss_acts
@@ -152,7 +167,9 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         model.optimizer = Adam(lr=args.lr_rate, params=filter(lambda x: x.requires_grad, model.parameters()), weight_decay=args.l2_norm)
         model.optimizer_policy = Adam(lr=args.lr_rate, params=filter(lambda x: x.requires_grad, model.policy.parameters()), weight_decay=args.l2_norm)
         # Training
+        step = 0
         for data in train_loader: # each element of data tuple has [batch_size] samples
+            step += 1
             model.optimizer.zero_grad()
             model.optimizer_policy.zero_grad()
             # Transfer to GPU
@@ -160,6 +177,8 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
                 data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
             input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
             print_loss_total, print_act_total, print_grad_total = trainOne(print_loss_total, print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor)
+            # if step>5:
+            #     break # for debug
         train_len = len(train_loader) # 886 data # len(train_loader.dataset.datasets) # 8423 dialogues
         print_loss_avg = print_loss_total / train_len
         print_act_total_avg = print_act_total / train_len
@@ -172,7 +191,6 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         # pp added
         val_dials_gen = {}
         valid_loss = 0
-
         for name, val_file in val_dials.items():
             loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
                                                                 input_lang_word2index, output_lang_word2index,

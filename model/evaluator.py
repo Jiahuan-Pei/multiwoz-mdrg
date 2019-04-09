@@ -101,14 +101,14 @@ def evaluateModel(dialogues, val_dials, delex_path, mode='valid'):
         print('count_wrong_len_ratio={}/{}'.format(count_wrong_len, len(dialogues)))
     # Print results
     if mode == 'valid':
-        try: print "Valid BLUES SCORE %.10f" % bscorer.score(model_corpus, corpus)
+        try: print "Valid BLUES : %.3f" % bscorer.score(model_corpus, corpus)
         except: print('BLUE SCORE ERROR')
         print 'Valid Corpus Matches : %2.2f%%' % (matches / float(total) * 100)
         print 'Valid Corpus Success : %2.2f%%' %  (successes / float(total) * 100)
         print 'Valid Total number of dialogues: %s ' % total
     else:
         try:
-            print "Corpus BLUES SCORE %.10f" % bscorer.score(model_corpus, corpus)
+            print "Corpus BLUES : %.3f" % bscorer.score(model_corpus, corpus)
         except:
             print('BLUE SCORE ERROR')
         print 'Corpus Matches : %2.2f%%' % (matches / float(total) * 100)

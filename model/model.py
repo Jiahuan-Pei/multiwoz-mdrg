@@ -253,9 +253,9 @@ class MoESeqAttnDecoderRNN(nn.Module):
         if 'bi' in cell_type:  # we dont need bidirectionality in decoding
             cell_type = cell_type.strip('bi')
         self.rnn = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p)
-        self.moe_rnn = whatCellType(hidden_size*self.k, hidden_size*self.k, cell_type, dropout_rate=self.dropout_p)
-        self.moe_hidden = nn.Linear(hidden_size * self.k, hidden_size)
-        self.moe_out = nn.Linear(hidden_size*self.k, output_size)
+        self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
+        self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
+        self.moe_out = nn.Linear(output_size*(self.k+1), (self.k+1))
         self.out = nn.Linear(hidden_size, output_size)
         self.score = nn.Linear(self.hidden_size + self.hidden_size, self.hidden_size)
         self.attn_combine = nn.Linear(embedding_size + hidden_size, embedding_size)
@@ -291,42 +291,44 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # getting context
         context = torch.bmm(attn_weights, encoder_outputs)  # [B,1,H]
 
-        # context = torch.bmm(attn_weights.unsqueeze(0), encoder_outputs.unsqueeze(0)) #[B,1,H]
         # Combine embedded input word and attended context, run through RNN
         rnn_input = torch.cat((embedded, context), 2)
         rnn_input = rnn_input.transpose(0, 1)
         output, hidden = self.rnn(rnn_input, hidden)
-        # output = output.squeeze(0)  # (1,B,H)->(B,H)
+        output = output.squeeze(0)  # (1,B,H)->(B,H)
 
-        # output = F.log_softmax(self.out(output), dim=1) # self.out(output)[batch, out_vocab]
+        output = F.log_softmax(self.out(output), dim=1) # self.out(output)[batch, out_vocab]
         return output, hidden, embedded.transpose(0, 1)  # , attn_weights
 
     def moe_layer(self, decoder_output_list, decoder_hidden_list, embedded_list):
-        # batch, out_vocab = feed_input.size()
-        # self.moe_fc = nn.Linear(batch, out_vocab) # pp added: moe layer
-        # rnn_input_0 = torch.cat(embedded_list, -1)
-        rnn_input = torch.cat(decoder_output_list, -1)
-        # rnn_input = torch.cat((rnn_input_0, rnn_input_1), -1)
-        hidden = torch.cat([a for a, b in decoder_hidden_list], -1), torch.cat([b for a, b in decoder_hidden_list], -1)
-        output, hidden = self.moe_rnn(rnn_input, hidden) # rnn_input [1, 72, 150]; hidden tuple: [1, 72, 150]
-        moe_weights = self.moe_out(output)
+        # output
+        cat_dec_out = torch.cat(decoder_output_list, -1) # (B, (k+1)*V)
+        # learn weights
+        moe_weights = self.moe_out(cat_dec_out) #[Batch, Intent]
         moe_weights = F.log_softmax(moe_weights, dim=1)
-        # output = F.log_softmax(self.out(output), dim=1)
         norm_weights = torch.sum(moe_weights, dim=1)
         norm_weights = norm_weights.unsqueeze(1)
-        moe_weights = torch.div(moe_weights, norm_weights)
-        output = torch.squeeze(moe_weights, 0)
+        moe_weights = torch.div(moe_weights, norm_weights) # [B, I]
+        moe_weights = moe_weights.permute(1,0).unsqueeze(-1) # [I, B, 1]
 
-        hidden = self.moe_hidden(hidden[0]), self.moe_hidden(hidden[1])
+        # output
+        moe_weights_output = moe_weights.expand(-1, -1, decoder_output_list[0].size(-1))  # [I, B, V]
+        decoder_output_tensor = torch.stack(decoder_output_list) # [I, B, V]
+        output = decoder_output_tensor.mul(moe_weights_output).sum(0)  # [B, V]
 
-        return output, hidden
+        # hidden
+        moe_weights_hidden = moe_weights.expand(-1, -1, decoder_hidden_list[0][0].size(-1))  # [I, B, H]
+        stack_dec_hid = torch.stack([a.squeeze(0) for a, b in decoder_hidden_list]), torch.stack([b.squeeze(0) for a, b in decoder_hidden_list]) # [I, B, H]
+        hidden = stack_dec_hid[0].mul(moe_weights_hidden).sum(0).unsqueeze(0), stack_dec_hid[1].mul(moe_weights_hidden).sum(0).unsqueeze(0) # [B, H]
+
+        return output, hidden # output[B, V]; hidden[1, B, H]
 
     def tokenMoE(self, decoder_input, decoder_hidden, encoder_outputs, mask_tensor):
         # decoder_input[batch, 1]; decoder_hidden: tuple element is a tensor[1, batch, hidden], encoder_outputs[maxlen_target, batch, hidden]
         # n = len(self.intent_list) # how many intents do we have
-        # output_c, hidden_c, embedded_c = self.expert_forward(input=decoder_input, hidden=decoder_hidden,
-        #                                                      encoder_outputs=encoder_outputs)
-        decoder_output_list, decoder_hidden_list, embedded_list = [], [], []
+        output_c, hidden_c, embedded_c = self.expert_forward(input=decoder_input, hidden=decoder_hidden,
+                                                             encoder_outputs=encoder_outputs)
+        decoder_output_list, decoder_hidden_list, embedded_list = [output_c], [hidden_c], [embedded_c]
         # count = 0
         for mask in mask_tensor: # each intent has a mask [Batch, 1]
             decoder_input_k = decoder_input.clone().masked_fill_(mask, value=PAD_token) # if assigned PAD_token it will count loss
@@ -349,7 +351,11 @@ class MoESeqAttnDecoderRNN(nn.Module):
         return decoder_output, decoder_hidden
 
     def forward(self, input, hidden, encoder_outputs, mask_tensor):
-        output, hidden = self.tokenMoE(input, hidden, encoder_outputs, mask_tensor)
+        if mask_tensor is not None:
+            output, hidden = self.tokenMoE(input, hidden, encoder_outputs, mask_tensor)
+        else:
+            pass
+            # output, hidden, _ = self.expert_forward(input, hidden, encoder_outputs)
         return output, hidden  # , attn_weights
 
 class DecoderRNN(nn.Module):
@@ -447,7 +453,7 @@ class Model(nn.Module):
         self.policy = policy.DefaultPolicy(self.hid_size_pol, self.hid_size_enc, self.db_size, self.bs_size)
 
         # pp added: intent_type branch
-        if self.args.intent_type:
+        if self.args.intent_type and True:
             self.decoder = MoESeqAttnDecoderRNN(self.emb_size, self.hid_size_dec, len(self.output_lang_index2word), self.cell_type, self.k, self.dropout, self.max_len)
         elif self.use_attn:
             if self.attn_type == 'bahdanau':
@@ -455,11 +461,12 @@ class Model(nn.Module):
         else:
             self.decoder = DecoderRNN(self.emb_size, self.hid_size_dec, len(self.output_lang_index2word), self.cell_type, self.dropout)
 
-
-
         if self.args.mode == 'train':
             self.gen_criterion = nn.NLLLoss(ignore_index=PAD_token, reduction='mean')  # logsoftmax is done in decoder part
             self.setOptimizers()
+
+        # pp added
+        self.moe_loss_layer = nn.Linear(1 * (self.k + 1), 1)
 
     def model_train(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None, dial_name=None):
 
@@ -468,6 +475,20 @@ class Model(nn.Module):
         proba = proba.view(-1, self.vocab_size)
 
         self.gen_loss = self.gen_criterion(proba, target_tensor.view(-1))
+
+        if True and mask_tensor is not None:  # data separate by intents:
+            gen_loss_list = []
+            for mask in mask_tensor:  # each intent has a mask [Batch, 1]
+                target_tensor_i = target_tensor.clone()
+                target_tensor_i = target_tensor_i.masked_fill_(mask, value=PAD_token)
+                loss_i = self.gen_criterion(proba, target_tensor_i.view(-1))
+                gen_loss_list.append(loss_i)
+
+            # self.gen_loss = 0.5 * self.gen_loss + 0.5 * torch.mean(torch.tensor(gen_loss_list))
+
+            gen_loss_list.append(self.gen_loss)
+            gen_loss_tensor = torch.as_tensor(torch.stack(gen_loss_list), device=self.device)
+            self.gen_loss = self.moe_loss_layer(gen_loss_tensor)
 
         self.loss = self.gen_loss
         self.loss.backward()
@@ -529,7 +550,7 @@ class Model(nn.Module):
                 topv, topi = decoder_output.topk(1)
                 decoder_input = topi.squeeze().detach()  # detach from history as input
 
-            proba[:, t, :] = decoder_output
+            proba[:, t, :] = decoder_output # decoder_output[Batch, TargetVocab]
 
         decoded_sent = None
 
@@ -595,6 +616,8 @@ class Model(nn.Module):
                             continue
 
                     # decode for one step using decoder
+                    # import pdb
+                    # pdb.set_trace()
                     mask_tensor_idx = mask_tensor[:, idx, :].unsqueeze(1) if mask_tensor is not None else None
                     decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_output, mask_tensor_idx)
 
