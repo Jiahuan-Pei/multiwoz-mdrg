@@ -22,6 +22,9 @@ default_device = detected_device
 # EOS_token = 1
 # UNK_token = 2
 # PAD_token = 3
+# use_moe_loss = True # inner model weighting loss
+# learn_loss_weight = True
+# use_moe_model = True # inner model structure partition
 
 # Shawn beam search decoding
 class BeamSearchNode(object):
@@ -255,7 +258,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         self.rnn = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p)
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
-        self.moe_out = nn.Linear(output_size*(self.k+1), (self.k+1))
+        self.moe_fc = nn.Linear(output_size*(self.k+1), (self.k+1))
         self.out = nn.Linear(hidden_size, output_size)
         self.score = nn.Linear(self.hidden_size + self.hidden_size, self.hidden_size)
         self.attn_combine = nn.Linear(embedding_size + hidden_size, embedding_size)
@@ -303,14 +306,23 @@ class MoESeqAttnDecoderRNN(nn.Module):
     def moe_layer(self, decoder_output_list, decoder_hidden_list, embedded_list):
         # output
         cat_dec_out = torch.cat(decoder_output_list, -1) # (B, (k+1)*V)
-        # learn weights
-        moe_weights = self.moe_out(cat_dec_out) #[Batch, Intent]
+        # MOE weights computation + normalization ------ Start
+        moe_weights = self.moe_fc(cat_dec_out) #[Batch, Intent]
         moe_weights = F.log_softmax(moe_weights, dim=1)
+        # moe_weights = F.softmax(moe_weights, dim=1)
+
+        # available_m = torch.zeros(moe_weights.size(), device=self.device)
+        # i = 0
+        # for k in enumerate(decoder_output_list):
+        #     available_m[:,i] = mask_tensor[k]
+        #     i += 1
+        # moe_weights = available_m * moe_weights
+
         norm_weights = torch.sum(moe_weights, dim=1)
         norm_weights = norm_weights.unsqueeze(1)
         moe_weights = torch.div(moe_weights, norm_weights) # [B, I]
         moe_weights = moe_weights.permute(1,0).unsqueeze(-1) # [I, B, 1]
-
+        # MOE weights computation + normalization ------ End
         # output
         moe_weights_output = moe_weights.expand(-1, -1, decoder_output_list[0].size(-1))  # [I, B, V]
         decoder_output_tensor = torch.stack(decoder_output_list) # [I, B, V]
@@ -453,7 +465,7 @@ class Model(nn.Module):
         self.policy = policy.DefaultPolicy(self.hid_size_pol, self.hid_size_enc, self.db_size, self.bs_size)
 
         # pp added: intent_type branch
-        if self.args.intent_type and True:
+        if self.args.intent_type and self.args.use_moe_model:
             self.decoder = MoESeqAttnDecoderRNN(self.emb_size, self.hid_size_dec, len(self.output_lang_index2word), self.cell_type, self.k, self.dropout, self.max_len)
         elif self.use_attn:
             if self.attn_type == 'bahdanau':
@@ -476,7 +488,7 @@ class Model(nn.Module):
 
         self.gen_loss = self.gen_criterion(proba, target_tensor.view(-1))
 
-        if True and mask_tensor is not None:  # data separate by intents:
+        if self.args.use_moe_loss and mask_tensor is not None:  # data separate by intents:
             gen_loss_list = []
             for mask in mask_tensor:  # each intent has a mask [Batch, 1]
                 target_tensor_i = target_tensor.clone()
@@ -484,12 +496,12 @@ class Model(nn.Module):
                 loss_i = self.gen_criterion(proba, target_tensor_i.view(-1))
                 gen_loss_list.append(loss_i)
 
-            # self.gen_loss = 0.5 * self.gen_loss + 0.5 * torch.mean(torch.tensor(gen_loss_list))
-
-            gen_loss_list.append(self.gen_loss)
-            gen_loss_tensor = torch.as_tensor(torch.stack(gen_loss_list), device=self.device)
-            self.gen_loss = self.moe_loss_layer(gen_loss_tensor)
-
+            if self.args.learn_loss_weight:
+                gen_loss_list.append(self.gen_loss)
+                gen_loss_tensor = torch.as_tensor(torch.stack(gen_loss_list), device=self.device)
+                self.gen_loss = self.moe_loss_layer(gen_loss_tensor)
+            else: # hyper weights
+                self.gen_loss = 0.5 * self.gen_loss + 0.5 * torch.mean(torch.tensor(gen_loss_list))
         self.loss = self.gen_loss
         self.loss.backward()
         grad = self.clipGradients()

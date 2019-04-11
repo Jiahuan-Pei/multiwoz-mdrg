@@ -76,6 +76,21 @@ misc_arg.add_argument('--beam_width', type=int, default=10, help='Beam width use
 # 5. Here add new args
 new_arg = parser.add_argument_group('New')
 new_arg.add_argument('--intent_type', type=str, default=None, help='separate experts by intents: None, domain, sysact or domain_act') # pp added
+# different implementation of moe
+# 1. only weight loss & hyper weights
+# --use_moe_loss=True --learn_loss_weight=False --use_moe_model=False
+# 2. only weight loss & learn weights
+# --use_moe_loss=True --learn_loss_weight=True --use_moe_model=False
+# 3. only split model
+# --use_moe_loss=False --learn_loss_weight=False --use_moe_model=True
+# 4. both & hyper weights
+# --use_moe_loss=True --learn_loss_weight=False --use_moe_model=True
+# 5. both & learn weights
+# --use_moe_loss=True --learn_loss_weight=True --use_moe_model=True
+new_arg.add_argument('--use_moe_loss', type=util.str2bool, nargs='?', const=True, default=False, help='inner model weighting loss')
+new_arg.add_argument('--learn_loss_weight', type=util.str2bool, nargs='?', const=True, default=False, help='learn weight of moe loss')
+new_arg.add_argument('--use_moe_model', type=util.str2bool, nargs='?', const=True, default=False, help='inner model structure partition')
+new_arg.add_argument('--debug', type=util.str2bool, nargs='?', const=True, default=False, help='if True use small data for debugging')
 
 args = parser.parse_args()
 args.device = detected_device.type
@@ -85,13 +100,13 @@ print('args.intent_type={}'.format(args.intent_type))
 print(args)
 util.init_seed(args.seed)
 
-def eval_with_train3(model, val_dials, mode='valid', policy='greedy'):
+def eval_with_train3(model, val_dials, mode='Valid', policy='Greedy'):
     val_dials_gen = {0:{}, 1:{}}
     valid_loss = {0:0, 1:0}
     policy_idx_list = range(2) # both
-    if policy == 'greedy':
+    if policy == 'Greedy':
         policy_idx_list = [0]
-    elif policy == 'beam':
+    elif policy == 'Beam':
         policy_idx_list = [1]
 
     for name, val_file in val_dials.items():
@@ -117,13 +132,13 @@ def eval_with_train3(model, val_dials, mode='valid', policy='greedy'):
 
     for ii in policy_idx_list:
         if ii == 0:
-            print(50 * '-' + 'GREEDY')
             model.beam_search = False
         else:
-            print(50 * '-' + 'BEAM')
             model.beam_search = True
-        print('Test - Current {} LOSS:{}'.format(mode, valid_loss[ii]))
-        evaluateModel(val_dials_gen[ii], val_dials, delex_path, mode)
+        BLEU, MATCH, SUCCESS, SCORE, total = evaluateModel(val_dials_gen[ii], val_dials, delex_path, mode)
+        print(50 * '-' + policy)
+        print('{0} Loss:{1:.6f}'.format(mode, valid_loss[ii]))
+
 
 
 def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor=None, name=None):
@@ -159,14 +174,17 @@ def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, i
 def trainIters(model, intent2index, n_epochs=10, args=args):
     prev_min_loss, early_stop_count = 1 << 30, args.early_stop_count
     start = time.time()
+    # Valid_Scores, Test_Scores = [], []
+    Scores = []
     for epoch in range(1, n_epochs + 1):
-        print('~'*50, '\nEpoch=', epoch)
+        print('%s\nEpoch=%s (%s %%)' % ('~'*50, epoch, epoch / n_epochs * 100))
         print_loss_total = 0; print_grad_total = 0; print_act_total = 0  # Reset every print_every
         start_time = time.time()
         # watch out where do you put it
         model.optimizer = Adam(lr=args.lr_rate, params=filter(lambda x: x.requires_grad, model.parameters()), weight_decay=args.l2_norm)
         model.optimizer_policy = Adam(lr=args.lr_rate, params=filter(lambda x: x.requires_grad, model.policy.parameters()), weight_decay=args.l2_norm)
         # Training
+        model.train()
         step = 0
         for data in train_loader: # each element of data tuple has [batch_size] samples
             step += 1
@@ -177,21 +195,45 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
                 data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
             input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
             print_loss_total, print_act_total, print_grad_total = trainOne(print_loss_total, print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor)
-            # if step>5:
-            #     break # for debug
+            if step > 1 and args.debug:
+                break # for debug
         train_len = len(train_loader) # 886 data # len(train_loader.dataset.datasets) # 8423 dialogues
         print_loss_avg = print_loss_total / train_len
         print_act_total_avg = print_act_total / train_len
         print_grad_avg = print_grad_total / train_len
-        print('Train - TIME:', time.time() - start_time)
-        print('Train - Time since %s (Epoch:%d %d%%) Loss: %.4f, Loss act: %.4f, Grad: %.4f' % (util.timeSince(start, epoch / n_epochs),
-                                                            epoch, epoch / n_epochs * 100, print_loss_avg, print_act_total_avg, print_grad_avg))
+        print('Train Time:%.4f' % (time.time() - start_time))
+        print('Train Loss: %.6f, Grad: %.6f' % (print_loss_avg, print_grad_avg))
+
+        if not args.debug:
+            step = 0
 
         # VALIDATION
+        model.train()
+        valid_loss = 0
+        for name, val_file in val_dials.items()[-step:]:
+            loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
+                                                                input_lang_word2index, output_lang_word2index,
+                                                                args.intent_type, intent2index)
+            data = iter(loader).next()
+            # Transfer to GPU
+            if torch.cuda.is_available():
+                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+            proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
+                                        bs_tensor, mask_tensor)  # pp added: mask_tensor
+            proba = proba.view(-1, model.vocab_size)  # flatten all predictions
+            loss = model.gen_criterion(proba, target_tensor.view(-1))
+            valid_loss += loss.item()
+        valid_len = len(val_dials) # 1000
+        valid_loss /= valid_len
+        # pp added: evaluate valid
+        print('Train Valid Loss: %.6f' % valid_loss)
+
         # pp added
+        model.eval()
         val_dials_gen = {}
         valid_loss = 0
-        for name, val_file in val_dials.items():
+        for name, val_file in val_dials.items()[-step:]:
             loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
                                                                 input_lang_word2index, output_lang_word2index,
                                                                 args.intent_type, intent2index)
@@ -206,22 +248,25 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
             loss = model.gen_criterion(proba, target_tensor.view(-1))
             valid_loss += loss.item()
             # pp added: evaluation - Plan A
-            model.eval()
+            # model.eval()
             output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
                                                         db_tensor, bs_tensor, mask_tensor)
-            model.train()
+            # model.train()
             val_dials_gen[name] = output_words
         valid_len = len(val_dials) # 1000
         valid_loss /= valid_len
-        print('Train - Current Valid LOSS:', valid_loss)
+
         # pp added: evaluate valid
-        evaluateModel(val_dials_gen, val_dials, delex_path, mode='valid')
+        print('Valid Loss: %.6f' % valid_loss)
+        # BLEU, MATCH, SUCCESS, SCORE, TOTAL
+        Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
+        # Valid_Scores.append(Valid_Score)
 
         # Testing
         # pp added
         model.eval()
         test_dials_gen ={}
-        for name, test_file in test_dials.items():
+        for name, test_file in test_dials.items()[-step:]:
             loader = multiwoz_dataloader.get_loader_by_dialogue(test_file, name,
                                                                 input_lang_word2index, output_lang_word2index,
                                                                 args.intent_type, intent2index)
@@ -234,10 +279,10 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
                                                         db_tensor, bs_tensor, mask_tensor)
             test_dials_gen[name] = output_words
         # pp added: evaluate valid
-        evaluateModel(test_dials_gen, test_dials, delex_path, mode='test')
+        Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
+        # Test_Scores.append(Test_Score)
 
         model.train()
-
         # pp added: evaluation - Plan B
         # print(50 * '=' + 'Evaluating start...')
         # # eval_with_train(model)
@@ -246,7 +291,21 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         # print(50 * '=' + 'Evaluating end...')
 
         model.saveModel(epoch)
+        # BLEU, MATCH, SUCCESS, SCORE, TOTAL
+        Scores.append(tuple([epoch]) + Valid_Score + Test_Score) # combine the tuples; 11 elements
+    import pandas as pd
+    fields = ['Epoch', 'Valid BLUES', 'Valid Matches', 'Valid Success', 'Valid Score', 'Valid Dialogues',
+              'Test BLUES', 'Test Matches', 'Test Success', 'Test Score', 'Test Dialogues']
+    df = pd.DataFrame(Scores, columns=fields)
+    sdf = df.sort_values(by=['Valid Score'], ascending=False)
+    print('='*50)
+    print(sdf.head(3).transpose())
 
+    if False:
+        import matplotlib.pyplot as plt
+        sdf.plot(x='Epoch', y=['Valid', 'Test'])
+        plt.savefig('output.png')
+    # plt.show()
 
 if __name__ == '__main__':
     input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = util.loadDictionaries(mdir=args.data_dir)

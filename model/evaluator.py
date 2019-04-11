@@ -38,7 +38,7 @@ def parseGoal(goal, d, domain):
     return goal
 
 
-def evaluateModel(dialogues, val_dials, delex_path, mode='valid'):
+def evaluateModel(dialogues, val_dials, delex_path, mode='Valid'):
     """Gathers statistics for the whole sets."""
     try:
         fin1 = file(delex_path)
@@ -100,21 +100,19 @@ def evaluateModel(dialogues, val_dials, delex_path, mode='valid'):
     if count_wrong_len:
         print('count_wrong_len_ratio={}/{}'.format(count_wrong_len, len(dialogues)))
     # Print results
-    if mode == 'valid':
-        try: print "Valid BLUES : %.3f" % bscorer.score(model_corpus, corpus)
-        except: print('BLUE SCORE ERROR')
-        print 'Valid Corpus Matches : %2.2f%%' % (matches / float(total) * 100)
-        print 'Valid Corpus Success : %2.2f%%' %  (successes / float(total) * 100)
-        print 'Valid Total number of dialogues: %s ' % total
-    else:
-        try:
-            print "Corpus BLUES : %.3f" % bscorer.score(model_corpus, corpus)
-        except:
-            print('BLUE SCORE ERROR')
-        print 'Corpus Matches : %2.2f%%' % (matches / float(total) * 100)
-        print 'Corpus Success : %2.2f%%' % (successes / float(total) * 100)
-        print 'Total number of dialogues: %s ' % total
-
+    try:
+        BLEU = bscorer.score(model_corpus, corpus)
+        MATCH = (matches / float(total) * 100)
+        SUCCESS = (successes / float(total) * 100)
+        SCORE = 0.5 * MATCH + 0.5 * SUCCESS + 100 * BLEU
+        print '%s BLUES : %.4f' % (mode, BLEU)
+        print '%s Matches : %2.2f%%' % (mode, MATCH)
+        print '%s Success : %2.2f%%' % (mode, SUCCESS)
+        print '%s Score: %.4f' % (mode, SCORE)
+        print '%s Dialogues : %s' % (mode, total)
+        return BLEU, MATCH, SUCCESS, SCORE, total
+    except:
+        print('SCORE ERROR')
 
 def evaluateGeneratedDialogue(dialog, goal, realDialogue, real_requestables):
     """Evaluates the dialogue created by the model.
