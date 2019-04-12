@@ -91,6 +91,7 @@ new_arg.add_argument('--use_moe_loss', type=util.str2bool, nargs='?', const=True
 new_arg.add_argument('--learn_loss_weight', type=util.str2bool, nargs='?', const=True, default=False, help='learn weight of moe loss')
 new_arg.add_argument('--use_moe_model', type=util.str2bool, nargs='?', const=True, default=False, help='inner model structure partition')
 new_arg.add_argument('--debug', type=util.str2bool, nargs='?', const=True, default=False, help='if True use small data for debugging')
+new_arg.add_argument('--train_valid', type=util.str2bool, nargs='?', const=True, default=False, help='if True add valid data for training')
 
 args = parser.parse_args()
 args.device = detected_device.type
@@ -135,7 +136,7 @@ def eval_with_train3(model, val_dials, mode='Valid', policy='Greedy'):
             model.beam_search = False
         else:
             model.beam_search = True
-        BLEU, MATCH, SUCCESS, SCORE, total = evaluateModel(val_dials_gen[ii], val_dials, delex_path, mode)
+        BLEU, MATCHES, SUCCESS, SCORE, total = evaluateModel(val_dials_gen[ii], val_dials, delex_path, mode)
         print(50 * '-' + policy)
         print('{0} Loss:{1:.6f}'.format(mode, valid_loss[ii]))
 
@@ -202,32 +203,33 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         print_act_total_avg = print_act_total / train_len
         print_grad_avg = print_grad_total / train_len
         print('Train Time:%.4f' % (time.time() - start_time))
-        print('Train Loss: %.6f, Grad: %.6f' % (print_loss_avg, print_grad_avg))
+        print('Train Loss: %.6f\nTrain Grad: %.6f' % (print_loss_avg, print_grad_avg))
 
         if not args.debug:
             step = 0
 
         # VALIDATION
-        model.train()
-        valid_loss = 0
-        for name, val_file in val_dials.items()[-step:]:
-            loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
-                                                                input_lang_word2index, output_lang_word2index,
-                                                                args.intent_type, intent2index)
-            data = iter(loader).next()
-            # Transfer to GPU
-            if torch.cuda.is_available():
-                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
-            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
-            proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
-                                        bs_tensor, mask_tensor)  # pp added: mask_tensor
-            proba = proba.view(-1, model.vocab_size)  # flatten all predictions
-            loss = model.gen_criterion(proba, target_tensor.view(-1))
-            valid_loss += loss.item()
-        valid_len = len(val_dials) # 1000
-        valid_loss /= valid_len
-        # pp added: evaluate valid
-        print('Train Valid Loss: %.6f' % valid_loss)
+        if args.train_valid: # if add valid data for training
+            model.train()
+            valid_loss = 0
+            for name, val_file in val_dials.items()[-step:]:
+                loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
+                                                                    input_lang_word2index, output_lang_word2index,
+                                                                    args.intent_type, intent2index)
+                data = iter(loader).next()
+                # Transfer to GPU
+                if torch.cuda.is_available():
+                    data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+                input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+                proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
+                                            bs_tensor, mask_tensor)  # pp added: mask_tensor
+                proba = proba.view(-1, model.vocab_size)  # flatten all predictions
+                loss = model.gen_criterion(proba, target_tensor.view(-1))
+                valid_loss += loss.item()
+            valid_len = len(val_dials) # 1000
+            valid_loss /= valid_len
+            # pp added: evaluate valid
+            print('Train Valid Loss: %.6f' % valid_loss)
 
         # pp added
         model.eval()
@@ -258,7 +260,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
 
         # pp added: evaluate valid
         print('Valid Loss: %.6f' % valid_loss)
-        # BLEU, MATCH, SUCCESS, SCORE, TOTAL
+        # BLEU, MATCHES, SUCCESS, SCORE, TOTAL
         Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
         # Valid_Scores.append(Valid_Score)
 
@@ -291,11 +293,11 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         # print(50 * '=' + 'Evaluating end...')
 
         model.saveModel(epoch)
-        # BLEU, MATCH, SUCCESS, SCORE, TOTAL
+        # BLEU, MATCHES, SUCCESS, SCORE, TOTAL
         Scores.append(tuple([epoch]) + Valid_Score + Test_Score) # combine the tuples; 11 elements
     import pandas as pd
-    fields = ['Epoch', 'Valid BLUES', 'Valid Matches', 'Valid Success', 'Valid Score', 'Valid Dialogues',
-              'Test BLUES', 'Test Matches', 'Test Success', 'Test Score', 'Test Dialogues']
+    fields = ['Epoch', 'Valid BLEU', 'Valid Matches', 'Valid Success', 'Valid Score', 'Valid Dialogues',
+              'Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Test Dialogues']
     df = pd.DataFrame(Scores, columns=fields)
     sdf = df.sort_values(by=['Valid Score'], ascending=False)
     print('='*50)

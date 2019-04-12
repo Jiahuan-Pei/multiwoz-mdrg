@@ -102,15 +102,15 @@ def evaluateModel(dialogues, val_dials, delex_path, mode='Valid'):
     # Print results
     try:
         BLEU = bscorer.score(model_corpus, corpus)
-        MATCH = (matches / float(total) * 100)
+        MATCHES = (matches / float(total) * 100)
         SUCCESS = (successes / float(total) * 100)
-        SCORE = 0.5 * MATCH + 0.5 * SUCCESS + 100 * BLEU
-        print '%s BLUES : %.4f' % (mode, BLEU)
-        print '%s Matches : %2.2f%%' % (mode, MATCH)
-        print '%s Success : %2.2f%%' % (mode, SUCCESS)
+        SCORE = 0.5 * MATCHES + 0.5 * SUCCESS + 100 * BLEU
+        print '%s BLEU: %.4f' % (mode, BLEU)
+        print '%s Matches: %2.2f%%' % (mode, MATCHES)
+        print '%s Success: %2.2f%%' % (mode, SUCCESS)
         print '%s Score: %.4f' % (mode, SCORE)
-        print '%s Dialogues : %s' % (mode, total)
-        return BLEU, MATCH, SUCCESS, SCORE, total
+        print '%s Dialogues: %s' % (mode, total)
+        return BLEU, MATCHES, SUCCESS, SCORE, total
     except:
         print('SCORE ERROR')
 
