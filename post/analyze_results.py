@@ -12,8 +12,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-def auto_display_subplots(df_list, title_list, column=3):
-    label_names = df_list[0].columns.tolist()
+def auto_display_subplots(df_list, title_list, column=3, label_names=None):
+    label_names = df_list[0].columns.tolist() if label_names is None else label_names
     c = column  # num of columns
     n = len(df_list)
     r = n // c if n % c == 0 else n // c + 1
@@ -25,7 +25,7 @@ def auto_display_subplots(df_list, title_list, column=3):
             col = i % c
             # print(i, n, row, col)
             l = df_list[i].plot(
-                y=label_names,
+                # y=label_names,
                 ax=axes[row, col],
                 # title=title_list[i],
                 sharex=True,
@@ -101,7 +101,7 @@ def old_one_jobout_to_df(job_out_file, fdir='post/', use_names=None, plot=False)
         for name in ['Valid Score' , 'Test Score']:
             mode = name.split()[0]
             col_name = df.columns.tolist()
-            if mode in ' '.join(col_name):
+            if '%s Matches' % mode in col_name and '%s Success' % mode in col_name and '%s BLEU' % mode in col_name:
                 col_name.insert(col_name.index('%s Success' % mode)+1, name)  # add after it
                 df.reindex(columns=col_name)
                 df[name] = 0.5*df['%s Matches' % mode] + 0.5*df['%s Success' % mode] + 1*df['%s BLEU' % mode]
@@ -124,7 +124,10 @@ def old_mul_jobout_to_df(job_out_file_list, fdir='post/', outfile='output', use_
         new_names.extend(['%s_%s'%(name, jobid) for name in df.columns.tolist()])
     new_df = pd.concat(df_list, axis=1)
     new_df.columns = new_names
-    new_df.to_excel('%s%s.xlsx' % (fdir, outfile))
+    extend_use_names = df_list[0].columns.tolist() # extend Score field
+    writer = pd.ExcelWriter('%s%s_all_df.xlsx' % (fdir, outfile), engine='xlsxwriter')
+    new_df.to_excel(excel_writer=writer, float_format = "%0.6f")
+    writer.save()
     # new_df.columns = new_names
     if plot:
         # print(new_df)
@@ -135,7 +138,14 @@ def old_mul_jobout_to_df(job_out_file_list, fdir='post/', outfile='output', use_
             auto_display_subplots(df_list, jobid_list, column=3)
         elif plot_split == 'names':
             df_group_by_names_list = []
-            auto_display_subplots(df_group_by_names_list, use_names, column=3)
+            writer = pd.ExcelWriter('%s%s_split_df.xlsx' % (fdir, outfile), engine='xlsxwriter')
+            for name in extend_use_names:
+                col_names = [new_name for new_name in new_names if name in new_name]
+                df_group_by_names = new_df[col_names]
+                df_group_by_names_list.append(df_group_by_names)
+                df_group_by_names.to_excel(excel_writer=writer, float_format="%0.6f", sheet_name=name)
+            writer.save()
+            auto_display_subplots(df_group_by_names_list, extend_use_names, column=3, label_names=jobid_list)
         plt.suptitle(outfile, fontsize=12)
         plt.tight_layout()
         plt.show()
@@ -154,13 +164,14 @@ if __name__ == "__main__":
         'bsl_g_0-295258.out'
     ]
     use_names = [
-        # 'Valid BLEU',
-        # 'Valid Matches',
-        # 'Valid Success',
+        'Train Loss',
+        'Valid Loss',
+        'Valid BLEU',
+        'Valid Matches',
+        'Valid Success',
         'Test BLEU',
         'Test Matches',
         'Test Success',
-        # 'Test Score'
     ]
-    old_mul_jobout_to_df(job_out_file_list, fdir='post/', outfile='bsl64valid', use_names=use_names, plot=True, plot_split='jobid')
-    # old_mul_jobout_to_df(job_out_file_list, fdir='post/', outfile='bsl64valid', use_names=use_names, plot=True, plot_split='names')
+    # old_mul_jobout_to_df(job_out_file_list, fdir='post/', outfile='bsl64valid', use_names=use_names, plot=True, plot_split='jobid')
+    old_mul_jobout_to_df(job_out_file_list, fdir='post/', outfile='bsl64valid', use_names=use_names, plot=True, plot_split='names')
