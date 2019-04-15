@@ -1,0 +1,296 @@
+Python version=2.7.15 |Anaconda custom (64-bit)| (default, Dec 14 2018, 19:04:19) 
+[GCC 7.3.0]
+PyTorch version=1.0.1.post2
+torch.cuda.is_available()=True
+torch.cuda.current_device()=0
+torch.cuda.device_count()=1
+torch.cuda.get_device_name(0)=GeForce GTX TITAN X
+torch.backends.cudnn.version()=7402
+torch.version.cuda=9.0.176
+Memory Usage:
+('Allocated:', 0.0, 'GB')
+('Cached:   ', 0.0, 'GB')
+args.device=cuda
+args.intent_type=None
+Namespace(attention_type='bahdanau', batch_size=64, beam_width=10, bs_size=94, cell_type='lstm', clip=5.0, data_dir='data', db_size=30, depth=1, device='cuda', dropout=0.0, early_stop_count=2, emb_size=50, epoch_load=0, hid_size_dec=150, hid_size_enc=150, hid_size_pol=150, intent_type=None, l2_norm=1e-05, load_param=False, log_dir='logs', lr_decay=0.0, lr_rate=0.005, max_epochs=20, max_len=50, mode='train', model_dir='results/bsl_g_20190410122401/model/', model_name='translate.ckpt', optim='adam', seed=0, teacher_ratio=1.0, train_output='results/bsl_g/data/train_dials/', use_attn=True, use_emb=False, vocab_size=400)
+Model has 574403  parameters.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 1
+Train - TIME: 78.2688589096
+Train - Time since 1m 18s  (Epoch:1 5%) Loss: 2.0238, Loss act: 0.0000, Grad: 0.2621
+Train - Current Valid LOSS: 1.60331330067
+Valid BLUES : 0.155
+Valid Corpus Matches : 42.40%
+Valid Corpus Success : 32.20%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.155
+Corpus Matches : 44.10%
+Corpus Success : 34.00%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 2
+Train - TIME: 77.536028862
+Train - Time since 10m 36s  (Epoch:2 10%) Loss: 1.5734, Loss act: 0.0000, Grad: 0.2239
+Train - Current Valid LOSS: 1.51411573404
+Valid BLUES : 0.164
+Valid Corpus Matches : 60.10%
+Valid Corpus Success : 49.30%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.164
+Corpus Matches : 60.40%
+Corpus Success : 49.90%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 3
+Train - TIME: 77.2122609615
+Train - Time since 20m 34s  (Epoch:3 15%) Loss: 1.5012, Loss act: 0.0000, Grad: 0.2129
+Train - Current Valid LOSS: 1.47576486856
+Valid BLUES : 0.172
+Valid Corpus Matches : 53.90%
+Valid Corpus Success : 43.60%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.175
+Corpus Matches : 56.20%
+Corpus Success : 43.30%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 4
+Train - TIME: 76.2823719978
+Train - Time since 30m 13s  (Epoch:4 20%) Loss: 1.4627, Loss act: 0.0000, Grad: 0.2075
+Train - Current Valid LOSS: 1.45604671586
+Valid BLUES : 0.184
+Valid Corpus Matches : 48.40%
+Valid Corpus Success : 38.60%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.189
+Corpus Matches : 51.50%
+Corpus Success : 39.60%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 5
+Train - TIME: 76.7812330723
+Train - Time since 39m 52s  (Epoch:5 25%) Loss: 1.4368, Loss act: 0.0000, Grad: 0.2046
+Train - Current Valid LOSS: 1.44852247965
+Valid BLUES : 0.172
+Valid Corpus Matches : 62.00%
+Valid Corpus Success : 54.60%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.173
+Corpus Matches : 63.00%
+Corpus Success : 53.10%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 6
+Train - TIME: 76.0123050213
+Train - Time since 49m 40s  (Epoch:6 30%) Loss: 1.4185, Loss act: 0.0000, Grad: 0.2030
+Train - Current Valid LOSS: 1.4365428037
+Valid BLUES : 0.189
+Valid Corpus Matches : 45.70%
+Valid Corpus Success : 37.70%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.188
+Corpus Matches : 50.60%
+Corpus Success : 41.20%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 7
+Train - TIME: 76.2591218948
+Train - Time since 59m 25s  (Epoch:7 35%) Loss: 1.4040, Loss act: 0.0000, Grad: 0.2017
+Train - Current Valid LOSS: 1.42787338895
+Valid BLUES : 0.189
+Valid Corpus Matches : 56.30%
+Valid Corpus Success : 46.10%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.190
+Corpus Matches : 57.60%
+Corpus Success : 46.90%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 8
+Train - TIME: 78.8665149212
+Train - Time since 69m 34s  (Epoch:8 40%) Loss: 1.3932, Loss act: 0.0000, Grad: 0.2013
+Train - Current Valid LOSS: 1.41914235622
+Valid BLUES : 0.189
+Valid Corpus Matches : 55.80%
+Valid Corpus Success : 47.70%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.191
+Corpus Matches : 54.00%
+Corpus Success : 45.60%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 9
+Train - TIME: 78.9491090775
+Train - Time since 80m 2s  (Epoch:9 45%) Loss: 1.3841, Loss act: 0.0000, Grad: 0.2007
+Train - Current Valid LOSS: 1.41698196691
+Valid BLUES : 0.184
+Valid Corpus Matches : 49.10%
+Valid Corpus Success : 41.50%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.187
+Corpus Matches : 50.40%
+Corpus Success : 42.50%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 10
+Train - TIME: 78.4699659348
+Train - Time since 89m 52s  (Epoch:10 50%) Loss: 1.3759, Loss act: 0.0000, Grad: 0.2009
+Train - Current Valid LOSS: 1.41252401286
+Valid BLUES : 0.191
+Valid Corpus Matches : 55.50%
+Valid Corpus Success : 48.10%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.194
+Corpus Matches : 57.90%
+Corpus Success : 47.40%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 11
+Train - TIME: 79.3886699677
+Train - Time since 99m 56s  (Epoch:11 55%) Loss: 1.3688, Loss act: 0.0000, Grad: 0.1999
+Train - Current Valid LOSS: 1.41687427926
+Valid BLUES : 0.186
+Valid Corpus Matches : 55.70%
+Valid Corpus Success : 45.80%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.191
+Corpus Matches : 57.60%
+Corpus Success : 49.50%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 12
+Train - TIME: 79.10217309
+Train - Time since 110m 4s  (Epoch:12 60%) Loss: 1.3623, Loss act: 0.0000, Grad: 0.2001
+Train - Current Valid LOSS: 1.40755704939
+Valid BLUES : 0.184
+Valid Corpus Matches : 44.50%
+Valid Corpus Success : 36.70%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.187
+Corpus Matches : 47.90%
+Corpus Success : 37.80%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 13
+Train - TIME: 79.1107289791
+Train - Time since 119m 45s  (Epoch:13 65%) Loss: 1.3579, Loss act: 0.0000, Grad: 0.2008
+Train - Current Valid LOSS: 1.40812648439
+Valid BLUES : 0.179
+Valid Corpus Matches : 51.60%
+Valid Corpus Success : 44.30%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.182
+Corpus Matches : 52.60%
+Corpus Success : 43.80%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 14
+Train - TIME: 79.2760629654
+Train - Time since 129m 24s  (Epoch:14 70%) Loss: 1.3521, Loss act: 0.0000, Grad: 0.2008
+Train - Current Valid LOSS: 1.40637931129
+Valid BLUES : 0.186
+Valid Corpus Matches : 60.10%
+Valid Corpus Success : 49.00%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.188
+Corpus Matches : 60.50%
+Corpus Success : 49.00%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 15
+Train - TIME: 78.678592205
+Train - Time since 139m 1s  (Epoch:15 75%) Loss: 1.3487, Loss act: 0.0000, Grad: 0.2013
+Train - Current Valid LOSS: 1.4073268373
+Valid BLUES : 0.177
+Valid Corpus Matches : 58.30%
+Valid Corpus Success : 50.00%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.178
+Corpus Matches : 57.60%
+Corpus Success : 48.20%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 16
+Train - TIME: 79.3054637909
+Train - Time since 148m 14s  (Epoch:16 80%) Loss: 1.3449, Loss act: 0.0000, Grad: 0.2014
+Train - Current Valid LOSS: 1.40494361055
+Valid BLUES : 0.193
+Valid Corpus Matches : 60.50%
+Valid Corpus Success : 52.60%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.196
+Corpus Matches : 61.60%
+Corpus Success : 52.20%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 17
+Train - TIME: 79.4319829941
+Train - Time since 158m 34s  (Epoch:17 85%) Loss: 1.3417, Loss act: 0.0000, Grad: 0.2015
+Train - Current Valid LOSS: 1.40309596181
+Valid BLUES : 0.167
+Valid Corpus Matches : 61.70%
+Valid Corpus Success : 52.70%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.169
+Corpus Matches : 63.50%
+Corpus Success : 53.40%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 18
+Train - TIME: 79.3332681656
+Train - Time since 168m 35s  (Epoch:18 90%) Loss: 1.3378, Loss act: 0.0000, Grad: 0.2012
+Train - Current Valid LOSS: 1.40065756804
+Valid BLUES : 0.182
+Valid Corpus Matches : 65.90%
+Valid Corpus Success : 56.40%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.184
+Corpus Matches : 67.30%
+Corpus Success : 56.70%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 19
+Train - TIME: 79.0654001236
+Train - Time since 178m 46s  (Epoch:19 95%) Loss: 1.3346, Loss act: 0.0000, Grad: 0.2018
+Train - Current Valid LOSS: 1.41008174422
+Valid BLUES : 0.197
+Valid Corpus Matches : 52.20%
+Valid Corpus Success : 45.00%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.202
+Corpus Matches : 55.90%
+Corpus Success : 48.40%
+Total number of dialogues: 1000 
+Saving parameters..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Epoch= 20
+Train - TIME: 79.7052009106
+Train - Time since 188m 44s  (Epoch:20 100%) Loss: 1.3314, Loss act: 0.0000, Grad: 0.2022
+Train - Current Valid LOSS: 1.40317853796
+Valid BLUES : 0.178
+Valid Corpus Matches : 47.70%
+Valid Corpus Success : 38.40%
+Valid Total number of dialogues: 1000 
+Corpus BLUES : 0.181
+Corpus Matches : 50.60%
+Corpus Success : 41.60%
+Total number of dialogues: 1000 
+Saving parameters..

@@ -10,6 +10,7 @@ db/*
 
 results/*
 logs/*
+job_out/*
 job_errors/*
 
 post/*.out

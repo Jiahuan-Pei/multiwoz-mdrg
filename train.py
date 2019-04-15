@@ -300,14 +300,11 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
               'Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Test Dialogues']
     df = pd.DataFrame(Scores, columns=fields)
     sdf = df.sort_values(by=['Valid Score'], ascending=False)
-    print('='*50)
+    print('Top3:', '=' * 60)
     print(sdf.head(3).transpose())
+    print('Best:', '=' * 60) # selected by valid score
+    print(sdf.head(1)[['Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Epoch']].transpose())
 
-    if False:
-        import matplotlib.pyplot as plt
-        sdf.plot(x='Epoch', y=['Valid', 'Test'])
-        plt.savefig('output.png')
-    # plt.show()
 
 if __name__ == '__main__':
     input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = util.loadDictionaries(mdir=args.data_dir)

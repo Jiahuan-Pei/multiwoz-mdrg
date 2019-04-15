@@ -52,7 +52,7 @@ def auto_display_subplots(df_list, title_list, column=3, label_names=None):
     return
 
 # one file
-def old_one_jobout_to_df(job_out_file, fdir='post/', use_names=None, plot=False):
+def old_one_jobout_to_df(job_out_file, fdir='job_out/', use_names=None, plot=False):
     with open('{0}{1}'.format(fdir, job_out_file), 'r') as fr:
         content = fr.read()
         # fix inconsistency -- START
@@ -95,16 +95,16 @@ def old_one_jobout_to_df(job_out_file, fdir='post/', use_names=None, plot=False)
         df = pd.DataFrame(zip(*data), columns=use_names, dtype=np.float)
         # print(df)
         # scale BLEU score to get clear view
-        for name in ['Valid BLEU', 'Test BLEU']:
-            if name in df.columns.tolist():
-                df.loc[:, name] *= 100
+        # for name in ['Valid BLEU', 'Test BLEU']:
+        #     if name in df.columns.tolist():
+        #         df.loc[:, name] *= 100
         for name in ['Valid Score' , 'Test Score']:
             mode = name.split()[0]
             col_name = df.columns.tolist()
             if '%s Matches' % mode in col_name and '%s Success' % mode in col_name and '%s BLEU' % mode in col_name:
                 col_name.insert(col_name.index('%s Success' % mode)+1, name)  # add after it
                 df.reindex(columns=col_name)
-                df[name] = 0.5*df['%s Matches' % mode] + 0.5*df['%s Success' % mode] + 1*df['%s BLEU' % mode]
+                df[name] = 0.5*df['%s Matches' % mode] + 0.5*df['%s Success' % mode] + 100*df['%s BLEU' % mode]
                 print df
         if plot:
             df.plot()
@@ -112,7 +112,7 @@ def old_one_jobout_to_df(job_out_file, fdir='post/', use_names=None, plot=False)
     return df
 
 # multiple files
-def old_mul_jobout_to_df(job_out_file_list, fdir='post/', outfile='output', use_names=None , plot=False, plot_split=None):
+def old_mul_jobout_to_df(job_out_file_list, fdir='job_out/', outfile='output', use_names=None , plot=False, plot_split=None):
     new_names = []
     df_list = []
     jobid_list = []
@@ -137,25 +137,37 @@ def old_mul_jobout_to_df(job_out_file_list, fdir='post/', outfile='output', use_
             # new_df.plot(subplots=True, layout=(2, 5))
             auto_display_subplots(df_list, jobid_list, column=3)
         elif plot_split == 'names':
-            df_group_by_names_list = []
+            df_group_by_names_list = [] # use for plot data
             writer = pd.ExcelWriter('%s%s_split_df.xlsx' % (fdir, outfile), engine='xlsxwriter')
             for name in extend_use_names:
                 col_names = [new_name for new_name in new_names if name in new_name]
                 df_group_by_names = new_df[col_names]
+                # Add AVG & STD columns
+                df_mean = df_group_by_names.agg(np.mean, axis=1)
+                df_std = df_group_by_names.agg(np.std, axis=1)
+                statistic_df = pd.concat([df_group_by_names, df_mean, df_std], axis=1, names=col_names+['mean', 'std'])
+                statistic_df.to_excel(excel_writer=writer, float_format="%0.6f", sheet_name=name) # save
                 df_group_by_names_list.append(df_group_by_names)
-                df_group_by_names.to_excel(excel_writer=writer, float_format="%0.6f", sheet_name=name)
+
             writer.save()
             auto_display_subplots(df_group_by_names_list, extend_use_names, column=3, label_names=jobid_list)
         plt.suptitle(outfile, fontsize=12)
         plt.tight_layout()
-        plt.show()
+        # plt.show()
+        plt.savefig('%s%s_%s.pdf' % (fdir, outfile, plot_split))
     return new_df
 
 # ====== Different settings of experiments --START =======
-
-# ====== Different settings of experiments --END =======
-
-if __name__ == "__main__":
+def view_bsl64valid():
+    '''
+        BLEU: 0.181 # 0.002449
+        Matches: 67.3 # 0
+        Success: 57.96 # 1.0288
+        Score: 80.73 # 0.2694
+        Epoch: 17 (start from 0)
+    '''
+    outfile = 'bsl64valid'
+    fdir = 'job_out/%s/' % outfile
     job_out_file_list = [
         'bsl_g_0-295169.out',
         'bsl_g_0-295170.out',
@@ -163,6 +175,65 @@ if __name__ == "__main__":
         'bsl_g_0-295257.out',
         'bsl_g_0-295258.out'
     ]
+    current_use_names = use_names
+    old_mul_jobout_to_df(job_out_file_list, fdir=fdir, outfile=outfile, use_names=current_use_names,
+                         plot=True, plot_split='jobid')
+    old_mul_jobout_to_df(job_out_file_list, fdir=fdir, outfile=outfile, use_names=current_use_names,
+                         plot=True, plot_split='names')
+
+def view_bsl128valid():
+    '''
+        BLEU: 0.1924 # 0.001497
+        Matches: 65.66 # 0.9871
+        Success: 55.04 # 1.6883
+        Score: 79.59 # 1.3043
+        Epoch: 18
+    '''
+    outfile = 'bsl128valid'
+    fdir = 'job_out/%s/' % outfile
+    job_out_file_list = [
+        # 'bsl_g_0-295122.out',
+        'bsl_g_0-295167.out',
+        'bsl_g_0-295168.out',
+        'bsl_g_0-295253.out',
+        'bsl_g_0-295254.out',
+        'bsl_g_0-295255.out',
+    ]
+    current_use_names = use_names
+    old_mul_jobout_to_df(job_out_file_list, fdir=fdir, outfile=outfile, use_names=current_use_names,
+                         plot=True, plot_split='jobid')
+
+    old_mul_jobout_to_df(job_out_file_list, fdir=fdir, outfile=outfile, use_names=current_use_names,
+                         plot=True, plot_split='names')
+
+def view_bsl256valid():
+    '''
+        BLEU: 0.1828 # 0.001166
+        Matches: 67.26 # 1.4136
+        Success: 59.78 # 1.1338
+        Score: 81.8 # 1.1688
+        Epoch: 17
+    '''
+    outfile = 'bsl256valid'
+    fdir = 'job_out/%s/' % outfile
+    job_out_file_list = [
+        'bsl_g_0-295171.out',
+        'bsl_g_0-295172.out',
+        'bsl_g_0-295250.out',
+        'bsl_g_0-295251.out',
+        'bsl_g_0-295252.out',
+    ]
+    current_use_names = use_names
+    old_mul_jobout_to_df(job_out_file_list, fdir=fdir, outfile=outfile, use_names=current_use_names,
+                         plot=True, plot_split='jobid')
+
+    old_mul_jobout_to_df(job_out_file_list, fdir=fdir, outfile=outfile, use_names=current_use_names,
+                         plot=True, plot_split='names')
+
+# ====== Different settings of experiments --END =======
+
+if __name__ == "__main__":
+
     use_names = [
         'Train Loss',
         'Valid Loss',
@@ -173,5 +244,6 @@ if __name__ == "__main__":
         'Test Matches',
         'Test Success',
     ]
-    # old_mul_jobout_to_df(job_out_file_list, fdir='post/', outfile='bsl64valid', use_names=use_names, plot=True, plot_split='jobid')
-    old_mul_jobout_to_df(job_out_file_list, fdir='post/', outfile='bsl64valid', use_names=use_names, plot=True, plot_split='names')
+    view_bsl64valid()
+    view_bsl128valid()
+    view_bsl256valid()

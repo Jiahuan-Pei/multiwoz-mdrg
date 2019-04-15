@@ -2,7 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="beb5fe9d-cce8-41d5-a7f7-00537eddad6d" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/job_out/bsl64valid/bsl_g_0-295169.out" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/job_out/bsl64valid/bsl_g_0-295170.out" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/job_out/bsl64valid/bsl_g_0-295256.out" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/job_out/bsl64valid/bsl_g_0-295257.out" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/job_out/bsl64valid/bsl_g_0-295258.out" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/post/analyze_results.py" beforeDir="false" afterPath="$PROJECT_DIR$/post/analyze_results.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -19,8 +27,8 @@
     <SUITE FILE_PATH="coverage/multiwoz_without_changes$model.coverage" NAME="model Coverage Results" MODIFIED="1553614385447" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/multiwoz_without_changes$train.coverage" NAME="moe-train Coverage Results" MODIFIED="1553785805860" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/multiwoz_without_changes$bsl_test.coverage" NAME="bsl-test Coverage Results" MODIFIED="1554281054898" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/multiwoz_without_changes$bsl_train.coverage" NAME="bsl-train Coverage Results" MODIFIED="1555027742576" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/multiwoz_without_changes$analyze_results.coverage" NAME="analyze_results Coverage Results" MODIFIED="1555069719962" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/multiwoz_without_changes$analyze_results.coverage" NAME="analyze_results Coverage Results" MODIFIED="1555329380688" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/multiwoz_without_changes$bsl_train.coverage" NAME="bsl-train Coverage Results" MODIFIED="1555332135085" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="DatabaseView">
     <option name="SHOW_INTERMEDIATE" value="true" />
@@ -38,11 +46,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="47">
-              <caret line="205" column="33" selection-start-line="205" selection-start-column="33" selection-end-line="205" selection-end-column="33" />
+            <state relative-caret-position="198">
+              <caret line="304" column="23" lean-forward="true" selection-start-line="304" selection-start-column="23" selection-end-line="304" selection-end-column="23" />
               <folding>
                 <element signature="e#15#80#0" expanded="true" />
               </folding>
@@ -62,16 +70,27 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/post/analyze_results.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="85">
-              <caret line="93" selection-start-line="93" selection-end-line="93" />
+            <state relative-caret-position="-312">
+              <caret line="214" column="17" lean-forward="true" selection-start-line="214" selection-start-column="17" selection-end-line="214" selection-end-column="17" />
               <folding>
                 <element signature="e#193#202#0" expanded="true" />
+                <element signature="e#342#1538#0" />
                 <element signature="e#519#1087#0" />
                 <element signature="e#1262#1574#0" />
+                <element signature="e#4260#6031#0" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/site-packages/pandas/core/reshape/concat.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="586">
+              <caret line="57" column="9" selection-start-line="57" selection-start-column="4" selection-end-line="57" selection-end-column="9" />
             </state>
           </provider>
         </entry>
@@ -79,8 +98,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model/evaluator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="273">
-              <caret line="111" column="28" selection-start-line="111" selection-start-column="28" selection-end-line="111" selection-end-column="28" />
+            <state relative-caret-position="161">
+              <caret line="107" column="22" selection-start-line="107" selection-start-column="18" selection-end-line="107" selection-end-column="22" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
                 <element signature="e#344#1562#0" />
@@ -100,9 +119,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>Train -</find>
-      <find>b</find>
-      <find>size_enc</find>
       <find>Scores.a</find>
       <find>train</find>
       <find>train_loader</find>
@@ -124,12 +140,15 @@
       <find>old_one_jobout_to_df</find>
       <find>pand</find>
       <find>print</find>
-      <find>Loss act</find>
       <find>use_names</find>
-      <find>Train Grad</find>
       <find>Test Score</find>
       <find>columns.tolist</find>
       <find>auto_display_subplots</find>
+      <find>post</find>
+      <find>.sh</find>
+      <find>Train Grad</find>
+      <find>png</find>
+      <find>Loss act</find>
     </findStrings>
     <replaceStrings>
       <replace>args.data_dir</replace>
@@ -165,10 +184,10 @@
         <option value="$PROJECT_DIR$/utils/multiwoz_dataloader.py" />
         <option value="$PROJECT_DIR$/model/model.py" />
         <option value="$PROJECT_DIR$/utils/util.py" />
-        <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/model/evaluator.py" />
-        <option value="$PROJECT_DIR$/train.py" />
+        <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/post/analyze_results.py" />
+        <option value="$PROJECT_DIR$/train.py" />
       </list>
     </option>
   </component>
@@ -214,11 +233,14 @@
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/results/bsl_c" />
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/job_out/bsl64valid" />
       <recent name="$PROJECT_DIR$" />
     </key>
-    <key name="CopyFile.RECENT_KEYS">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/job_out/bsl64valid" />
+      <recent name="$PROJECT_DIR$/job_out" />
+      <recent name="$PROJECT_DIR$/results/bsl_c" />
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
@@ -234,7 +256,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.analyze_results">
+  <component name="RunManager" selected="Python.bsl-train">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="multiwoz-without-changes" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -433,12 +455,12 @@
       <workItem from="1554129259565" duration="241000" />
       <workItem from="1554129654434" duration="65343000" />
       <workItem from="1554467028611" duration="7231000" />
-      <workItem from="1554573422098" duration="88009000" />
+      <workItem from="1554573422098" duration="96765000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="419332000" />
+    <option name="totallyTimeSpent" value="428088000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -451,14 +473,15 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="-1200" width="1920" height="1200" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.15654951" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32824427" />
-      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.25112918" />
-      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.59227467" weight="0.2682927" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.2023487" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.59227467" visible="true" weight="0.42818427" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" sideWeight="0.49946752" weight="0.32824427" />
@@ -466,14 +489,14 @@
       <window_info anchor="bottom" id="Version Control" order="8" sideWeight="0.4997284" weight="0.3272901" />
       <window_info anchor="bottom" id="File Transfer" order="9" weight="0.17100371" />
       <window_info anchor="bottom" id="Database Changes" order="10" />
-      <window_info anchor="bottom" id="Terminal" order="11" sideWeight="0.49733758" weight="0.2559055" />
+      <window_info anchor="bottom" id="Terminal" order="11" sideWeight="0.49733758" weight="0.25474253" />
       <window_info anchor="bottom" id="Event Log" order="12" sideWeight="0.40772533" side_tool="true" weight="0.45800525" />
       <window_info anchor="bottom" id="Python Console" order="13" sideWeight="0.49733758" weight="0.32824427" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Remote Host" order="3" />
-      <window_info active="true" anchor="right" id="SciView" order="4" visible="true" weight="0.49520767" />
+      <window_info active="true" anchor="right" id="SciView" order="4" visible="true" weight="0.44142705" />
       <window_info anchor="right" id="Database" order="5" weight="0.09298999" />
     </layout>
   </component>
@@ -530,33 +553,18 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/train.py</url>
-          <line>307</line>
-          <option name="timeStamp" value="442" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/train.py</url>
           <line>303</line>
           <option name="timeStamp" value="443" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/train.py</url>
-          <line>309</line>
-          <option name="timeStamp" value="444" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/post/analyze_results.py</url>
-          <line>147</line>
+          <line>152</line>
           <option name="timeStamp" value="491" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/post/analyze_results.py</url>
-          <line>15</line>
-          <option name="timeStamp" value="501" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/post/analyze_results.py</url>
-          <line>37</line>
-          <option name="timeStamp" value="503" />
+          <url>file://$PROJECT_DIR$/train.py</url>
+          <line>305</line>
+          <option name="timeStamp" value="507" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -578,47 +586,52 @@
   <component name="debuggerHistoryManager">
     <expressions id="evaluateCodeFragment">
       <expression>
-        <expression-string>label_names</expression-string>
+        <expression-string>sdf.head(1)[['Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Epoch']].transpose()</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>title_list</expression-string>
+        <expression-string>sdf.head(1)[['Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Epoch']].transponse()</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>new_use_names</expression-string>
+        <expression-string>sdf.head(1)[['Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Epoch']]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>df_group_by_names</expression-string>
+        <expression-string>sdf.head(1)[['Epoch', 'Test BLEU']]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>df_group_by_names_list</expression-string>
+        <expression-string>sdf.head(1)['Epoch', 'Test BLEU']</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>df_group_by_names_list[0]</expression-string>
+        <expression-string>sdf.head(1)['Epoch']</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>df.columns.tolist()</expression-string>
+        <expression-string>sdf.head(1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>df</expression-string>
+        <expression-string>pd.concat([df_group_by_names, df_mean, df_std], axis=1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>data</expression-string>
+        <expression-string>pd.concat([df_group_by_names, df_mean, df_std])</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>df_group_by_names.agg(np.mean, np.std, axis=1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
@@ -672,22 +685,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/site-packages/torch/nn/utils/clip_grad.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="316">
-          <caret line="16" column="26" lean-forward="true" selection-start-line="16" selection-start-column="26" selection-end-line="16" selection-end-column="26" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/logs/laptop-20190219141002.train" />
-    <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/argparse.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="244">
-          <caret line="1587" column="24" lean-forward="true" selection-start-line="1587" selection-start-column="24" selection-end-line="1587" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/logs/laptop-20190219141046.train" />
     <entry file="file://$PROJECT_DIR$/logs/laptop-20190219163821.train" />
     <entry file="file://$PROJECT_DIR$/results/bsl_g/model/translate.ckpt.config" />
     <entry file="file://$PROJECT_DIR$/logs/laptop.test" />
@@ -949,13 +946,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="336">
-          <caret line="12" column="12" lean-forward="true" selection-start-line="12" selection-start-column="12" selection-end-line="12" selection-end-column="12" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/re.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
@@ -963,13 +953,35 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/train.py">
+    <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/site-packages/matplotlib/pyplot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="47">
-          <caret line="205" column="33" selection-start-line="205" selection-start-column="33" selection-end-line="205" selection-end-column="33" />
-          <folding>
-            <element signature="e#15#80#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="188">
+          <caret line="734" column="4" selection-start-line="734" selection-start-column="4" selection-end-line="734" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/job_out/bsl128valid/bsl_g_0-295122.out">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-37" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/job_out/bsl64valid/bsl64valid_jobid.png">
+      <provider selected="true" editor-type-id="images" />
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/site-packages/pandas/core/reshape/concat.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="586">
+          <caret line="57" column="9" selection-start-line="57" selection-start-column="4" selection-end-line="57" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/job_out/bsl64valid/bsl_g_0-295169.out">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="336">
+          <caret line="12" column="9" selection-start-line="12" selection-start-column="9" selection-end-line="12" selection-end-column="9" />
         </state>
       </provider>
     </entry>
@@ -983,10 +995,24 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/post/analyze_results.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-312">
+          <caret line="214" column="17" lean-forward="true" selection-start-line="214" selection-start-column="17" selection-end-line="214" selection-end-column="17" />
+          <folding>
+            <element signature="e#193#202#0" expanded="true" />
+            <element signature="e#342#1538#0" />
+            <element signature="e#519#1087#0" />
+            <element signature="e#1262#1574#0" />
+            <element signature="e#4260#6031#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/model/evaluator.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="273">
-          <caret line="111" column="28" selection-start-line="111" selection-start-column="28" selection-end-line="111" selection-end-column="28" />
+        <state relative-caret-position="161">
+          <caret line="107" column="22" selection-start-line="107" selection-start-column="18" selection-end-line="107" selection-end-column="22" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
             <element signature="e#344#1562#0" />
@@ -994,21 +1020,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/site-packages/matplotlib/pyplot.py">
+    <entry file="file://$PROJECT_DIR$/train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="188">
-          <caret line="734" column="4" selection-start-line="734" selection-start-column="4" selection-end-line="734" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/post/analyze_results.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="93" selection-start-line="93" selection-end-line="93" />
+        <state relative-caret-position="198">
+          <caret line="304" column="23" lean-forward="true" selection-start-line="304" selection-start-column="23" selection-end-line="304" selection-end-column="23" />
           <folding>
-            <element signature="e#193#202#0" expanded="true" />
-            <element signature="e#519#1087#0" />
-            <element signature="e#1262#1574#0" />
+            <element signature="e#15#80#0" expanded="true" />
           </folding>
         </state>
       </provider>
