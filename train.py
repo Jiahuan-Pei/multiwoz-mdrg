@@ -303,7 +303,8 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
     print('Top3:', '=' * 60)
     print(sdf.head(3).transpose())
     print('Best:', '=' * 60) # selected by valid score
-    print(sdf.head(1)[['Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Epoch']].transpose())
+    best_df = sdf.head(1)[['Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Epoch']]
+    print(best_df.transpose())
 
 
 if __name__ == '__main__':
