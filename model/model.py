@@ -234,7 +234,7 @@ class SeqAttnDecoderRNN(nn.Module):
         output, hidden = self.rnn(rnn_input, hidden)
         output = output.squeeze(0)  # (1,B,V)->(B,V)
 
-        output = bh(self.out(output), dim=1)
+        output = F.log_softmax(self.out(output), dim=1)
         return output, hidden  # , attn_weights
 
 class MoESeqAttnDecoderRNN(nn.Module):
