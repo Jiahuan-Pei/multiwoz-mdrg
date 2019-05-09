@@ -11,6 +11,7 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 def auto_display_subplots(df_list, title_list, column=3, label_names=None):
     label_names = df_list[0].columns.tolist() if label_names is None else label_names
@@ -230,6 +231,15 @@ def view_bsl256valid():
     old_mul_jobout_to_df(job_out_file_list, fdir=fdir, outfile=outfile, use_names=current_use_names,
                          plot=True, plot_split='names')
 
+# compare the reproducibility
+def view_consistence(outfile):
+    fdir = 'job_out/%s/' % outfile
+    job_out_file_list = [fname for fname in os.listdir(fdir) if os.path.splitext(fname)[1] == '.out']
+    current_use_names = use_names
+
+    old_mul_jobout_to_df(job_out_file_list, fdir=fdir, outfile=outfile, use_names=current_use_names,
+                         plot=True, plot_split='names')
+
 # ====== Different settings of experiments --END =======
 
 if __name__ == "__main__":
@@ -244,6 +254,8 @@ if __name__ == "__main__":
         'Test Matches',
         'Test Success',
     ]
-    view_bsl64valid()
-    view_bsl128valid()
-    view_bsl256valid()
+    # view_bsl64valid()
+    #     # view_bsl128valid()
+    #     # view_bsl256valid()
+    # view_consistence('bsl64_valid')
+    view_consistence('bsl64_no_valid')

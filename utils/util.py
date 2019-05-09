@@ -129,7 +129,7 @@ def get_env_info():
     if flag:
         from torch.backends import cudnn
         cudnn.enabled = True
-        cudnn.benchmark = True # False effeciceny decrise; but fix random;
+        cudnn.benchmark = False # False efficiency decrease; but fix random;
         cudnn.deterministic = True  # if True, the result would keep same; if False, efficiency would be high but results would change slightly
         # os.environ["CUDA_VISIBLE_DEVICES"] = '1' # choose which device to use
         # torch.set_default_tensor_type(torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor) # be careful if use
