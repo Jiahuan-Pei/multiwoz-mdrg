@@ -367,8 +367,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
             output, hidden = self.tokenMoE(input, hidden, encoder_outputs, mask_tensor)
         else:
             pass
-            # output, hidden, _ = self.expert_forward(input, hidden, encoder_outputs)
-        return output, hidden  # , attn_weights
+            output, hidden, _ = self.expert_forward(input, hidden, encoder_outputs)
+        return output, hidden, mask_tensor  # , attn_weights
 
 class DecoderRNN(nn.Module):
     def __init__(self, embedding_size, hidden_size, output_size, cell_type, dropout=0.1, device=default_device):
@@ -509,7 +509,7 @@ class Model(nn.Module):
         self.optimizer.zero_grad()
 
         #self.printGrad()
-        return self.loss.item(), 0, grad
+        return self.loss.item(), 0, grad, proba
 
     def setOptimizers(self):
         self.optimizer_policy = None

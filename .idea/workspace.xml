@@ -2,9 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="beb5fe9d-cce8-41d5-a7f7-00537eddad6d" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/post/domain_classfication.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/post/evaluationOnIntents.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model/evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/model/evaluator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/model/model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/post/domain_classfication.py" beforeDir="false" afterPath="$PROJECT_DIR$/post/domain_classfication.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -13,16 +16,19 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/multiwoz_without_changes$test.coverage" NAME="bsl-test Coverage Results" MODIFIED="1553860090732" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/multiwoz_without_changes$domain_classfication.coverage" NAME="domain_classfication Coverage Results" MODIFIED="1557521695840" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/multiwoz_without_changes$domain_classfication.coverage" NAME="domain_classfication Coverage Results" MODIFIED="1557527764195" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/multiwoz_without_changes$moe_train.coverage" NAME="moe-train Coverage Results" MODIFIED="1554944099174" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/multiwoz_without_changes$train_bsl.coverage" NAME="bsl-train Coverage Results" MODIFIED="1553786525709" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/multiwoz_without_changes$multiwoz_dataloader.coverage" NAME="multiwoz_dataloader Coverage Results" MODIFIED="1554205870279" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/multiwoz_without_changes$moe_test.coverage" NAME="moe-test Coverage Results" MODIFIED="1554450725493" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/multiwoz_without_changes$model.coverage" NAME="model Coverage Results" MODIFIED="1553614385447" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/multiwoz_without_changes$train.coverage" NAME="moe-train Coverage Results" MODIFIED="1553785805860" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/multiwoz_without_changes$bsl_test.coverage" NAME="bsl-test Coverage Results" MODIFIED="1554281054898" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/multiwoz_without_changes$analyze_results.coverage" NAME="analyze_results Coverage Results" MODIFIED="1556176698348" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/multiwoz_without_changes$plot_tsne.coverage" NAME="plot_tsne Coverage Results" MODIFIED="1557526948209" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/multiwoz_without_changes$test.coverage" NAME="bsl-test Coverage Results" MODIFIED="1553860090732" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/multiwoz_without_changes$evaluationOnIntents.coverage" NAME="evaluationOnIntents Coverage Results" MODIFIED="1557745111557" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/multiwoz_without_changes$evaluator.coverage" NAME="evaluator Coverage Results" MODIFIED="1557745054734" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/multiwoz_without_changes$model.coverage" NAME="model Coverage Results" MODIFIED="1553614385447" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/multiwoz_without_changes$bsl_test.coverage" NAME="bsl-test Coverage Results" MODIFIED="1554281054898" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/multiwoz_without_changes$bsl_train.coverage" NAME="bsl-train Coverage Results" MODIFIED="1557481832626" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="DatabaseView">
@@ -44,10 +50,34 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="317">
-              <caret line="263" column="28" lean-forward="true" selection-start-line="263" selection-start-column="28" selection-end-line="263" selection-end-column="28" />
+            <state relative-caret-position="135">
+              <caret line="288" column="17" selection-start-line="288" selection-start-column="17" selection-end-line="288" selection-end-column="17" />
               <folding>
                 <element signature="e#15#80#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/test.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-2656">
+              <caret line="83" column="24" selection-start-line="83" selection-start-column="24" selection-end-line="83" selection-end-column="24" />
+              <folding>
+                <element signature="e#38#103#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/post/evaluationOnIntents.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="101">
+              <caret line="48" column="29" selection-start-line="48" selection-start-column="29" selection-end-line="48" selection-end-column="29" />
+              <folding>
+                <element signature="e#193#258#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -56,35 +86,21 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model/evaluator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="198">
-              <caret line="79" selection-start-line="79" selection-end-line="79" />
+            <state relative-caret-position="-3427">
+              <caret line="218" column="29" selection-start-line="194" selection-start-column="12" selection-end-line="194" selection-end-column="22" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
                 <element signature="e#344#1562#0" />
-                <element signature="e#4471#10645#0" />
-                <element signature="e#10696#17009#0" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/post/analyze_results.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="336">
-              <caret line="251" column="24" selection-start-line="251" selection-start-column="24" selection-end-line="251" selection-end-column="24" />
-              <folding>
-                <element signature="e#193#202#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/post/domain_classfication.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="225">
-              <caret line="52" column="19" lean-forward="true" selection-start-line="52" selection-start-column="19" selection-end-line="52" selection-end-column="19" />
+            <state relative-caret-position="1260">
+              <caret line="51" column="31" selection-start-line="51" selection-start-column="31" selection-end-line="51" selection-end-column="31" />
               <folding>
                 <element signature="e#292#335#0" expanded="true" />
               </folding>
@@ -101,8 +117,8 @@
         <entry file="file://$PROJECT_DIR$/README.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
             <state split_layout="SPLIT">
-              <first_editor relative-caret-position="489">
-                <caret line="20" lean-forward="true" selection-start-line="20" selection-end-line="20" />
+              <first_editor relative-caret-position="560">
+                <caret line="20" selection-start-line="20" selection-end-line="20" />
               </first_editor>
               <second_editor />
             </state>
@@ -112,15 +128,12 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model/model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="269">
-              <caret line="61" column="51" selection-start-line="61" selection-start-column="42" selection-end-line="61" selection-end-column="51" />
+            <state relative-caret-position="11088">
+              <caret line="482" column="19" selection-start-line="482" selection-start-column="8" selection-end-line="482" selection-end-column="19" />
               <folding>
                 <element signature="e#0#65#0" expanded="true" />
                 <element signature="e#2495#4877#0" />
                 <element signature="e#4907#6376#0" />
-                <element signature="e#9216#16367#0" />
-                <element signature="e#16402#17656#0" />
-                <element signature="e#17687#34462#0" />
               </folding>
             </state>
           </provider>
@@ -129,8 +142,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/utils/util.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2716">
-              <caret line="140" column="30" selection-start-line="140" selection-start-column="30" selection-end-line="140" selection-end-column="30" />
+            <state relative-caret-position="3556">
+              <caret line="170" column="26" selection-start-line="170" selection-start-column="4" selection-end-line="170" selection-end-column="26" />
               <folding>
                 <element signature="e#27#42#0" expanded="true" />
                 <element signature="e#489#1090#0" />
@@ -151,19 +164,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>Loss</find>
-      <find>MATCH</find>
-      <find>Valid</find>
-      <find>outfile</find>
-      <find>old_one_jobout_to_df</find>
-      <find>pand</find>
-      <find>print</find>
-      <find>use_names</find>
-      <find>Test Score</find>
-      <find>columns.tolist</find>
-      <find>auto_display_subplots</find>
-      <find>post</find>
-      <find>.sh</find>
       <find>Train Grad</find>
       <find>png</find>
       <find>Loss act</find>
@@ -177,10 +177,23 @@
       <find>data_dir</find>
       <find>dataload</find>
       <find>squ</find>
-      <find>cell_type</find>
       <find>LSTM</find>
       <find>val_dials</find>
+      <find>cell_type</find>
       <find>evaluate</find>
+      <find>proba</find>
+      <find>decoded_sent</find>
+      <find>model_train</find>
+      <find>evaluat</find>
+      <find>delex_path</find>
+      <find>test_dials_gen</find>
+      <find>test_dials</find>
+      <find>dialogues</find>
+      <find>gen_stats</find>
+      <find>valid</find>
+      <find>total</find>
+      <find>total_dial</find>
+      <find>decode_output</find>
     </findStrings>
     <replaceStrings>
       <replace>args.data_dir</replace>
@@ -195,6 +208,7 @@
       <replace>torch.</replace>
       <replace>use_moe_model</replace>
       <replace>name_pattern_dict</replace>
+      <replace>total_dials</replace>
     </replaceStrings>
     <dirStrings>
       <dir>$PROJECT_DIR$</dir>
@@ -214,20 +228,24 @@
         <option value="$PROJECT_DIR$/moe_train.sh" />
         <option value="$PROJECT_DIR$/test.py" />
         <option value="$PROJECT_DIR$/utils/multiwoz_dataloader.py" />
-        <option value="$PROJECT_DIR$/model/evaluator.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
-        <option value="$PROJECT_DIR$/train.py" />
         <option value="$PROJECT_DIR$/utils/util.py" />
         <option value="$PROJECT_DIR$/post/analyze_results.py" />
-        <option value="$PROJECT_DIR$/model/model.py" />
         <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/post/plot_tsne.py" />
         <option value="$PROJECT_DIR$/post/domain_classfication.py" />
+        <option value="$PROJECT_DIR$/model/model.py" />
+        <option value="$PROJECT_DIR$/model/evaluator.py" />
+        <option value="$PROJECT_DIR$/train.py" />
+        <option value="$PROJECT_DIR$/post/evaluationOnIntents.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" fullScreen="true">
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="48" />
+    <option name="y" value="67" />
     <option name="width" value="1440" />
-    <option name="height" value="900" />
+    <option name="height" value="877" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -251,6 +269,11 @@
               <item name="multiwoz-without-changes" type="b2602c69:ProjectViewProjectNode" />
               <item name="multiwoz-without-changes" type="462c0819:PsiDirectoryNode" />
               <item name="post" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="multiwoz-without-changes" type="b2602c69:ProjectViewProjectNode" />
+              <item name="multiwoz-without-changes" type="462c0819:PsiDirectoryNode" />
+              <item name="results" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="multiwoz-without-changes" type="b2602c69:ProjectViewProjectNode" />
@@ -295,7 +318,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.domain_classfication">
+  <component name="RunManager" selected="Python.moe-test">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="multiwoz-without-changes" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -333,28 +356,6 @@
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/post/analyze_results.py" />
       <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="bsl-test" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="multiwoz-without-changes" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test.py" />
-      <option name="PARAMETERS" value="--model_dir=results/bsl_c/model/ --valid_output=results/bsl_c/data/val_dials/ --decode_output=results/bsl_c/data/test_dials/ --no_models=1 --beam_width=2" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -406,6 +407,50 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="evaluationOnIntents" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="multiwoz-without-changes" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$USER_HOME$/anaconda3/envs/multiwoz/bin/python2" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/post/evaluationOnIntents.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="evaluator" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="multiwoz-without-changes" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$USER_HOME$/anaconda3/envs/multiwoz/bin/python2" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/model/evaluator.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="moe-test" type="PythonConfigurationType" factoryName="Python">
       <module name="multiwoz-without-changes" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -428,29 +473,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="moe-train" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="multiwoz-without-changes" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/train.py" />
-      <option name="PARAMETERS" value="--debug=True --batch_size=10 --model_dir=results/moe_c/model/ --max_epochs=2 --data_dir=../multiwoz-moe/data --intent_type=domain  --emb_size=2 --hid_size_enc=3 --hid_size_dec=3 --hid_size_pol=3" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="multiwoz_dataloader" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="plot_tsne" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="multiwoz-without-changes" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -463,7 +486,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/utils/multiwoz_dataloader.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/post/plot_tsne.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -475,19 +498,19 @@
     <list>
       <item itemvalue="Python.bsl-train" />
       <item itemvalue="Python.moe-test" />
-      <item itemvalue="Python.moe-train" />
-      <item itemvalue="Python.bsl-test" />
-      <item itemvalue="Python.multiwoz_dataloader" />
       <item itemvalue="Python.analyze_results" />
       <item itemvalue="Python.domain_classfication" />
+      <item itemvalue="Python.plot_tsne" />
+      <item itemvalue="Python.evaluationOnIntents" />
+      <item itemvalue="Python.evaluator" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.evaluationOnIntents" />
+        <item itemvalue="Python.evaluator" />
         <item itemvalue="Python.domain_classfication" />
+        <item itemvalue="Python.plot_tsne" />
         <item itemvalue="Python.analyze_results" />
-        <item itemvalue="Python.moe-train" />
-        <item itemvalue="Python.bsl-test" />
-        <item itemvalue="Python.multiwoz_dataloader" />
       </list>
     </recent_temporary>
   </component>
@@ -521,12 +544,13 @@
       <workItem from="1554573422098" duration="99404000" />
       <workItem from="1556175268668" duration="2632000" />
       <workItem from="1556876710355" duration="6450000" />
-      <workItem from="1557424531893" duration="12478000" />
+      <workItem from="1557424531893" duration="27297000" />
+      <workItem from="1557744249269" duration="2926000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="452287000" />
+    <option name="totallyTimeSpent" value="470032000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -538,31 +562,30 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1440" height="900" extended-state="0" />
-    <editor active="true" />
+    <frame x="0" y="23" width="1440" height="877" extended-state="6" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19384836" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.19670959" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32824427" />
-      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.2354399" />
-      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.59227467" weight="0.2746161" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.40682414" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.59227467" weight="0.28608924" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" sideWeight="0.49946752" weight="0.32824427" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" sideWeight="0.4997284" weight="0.3272901" />
-      <window_info anchor="bottom" id="File Transfer" order="9" weight="0.17100371" />
+      <window_info anchor="bottom" id="File Transfer" order="9" weight="0.22834645" />
       <window_info anchor="bottom" id="Database Changes" order="10" />
-      <window_info anchor="bottom" id="Terminal" order="11" sideWeight="0.49733758" weight="0.19783197" />
+      <window_info anchor="bottom" id="Terminal" order="11" sideWeight="0.49733758" weight="0.24409449" />
       <window_info anchor="bottom" id="Event Log" order="12" sideWeight="0.40772533" side_tool="true" weight="0.45800525" />
       <window_info anchor="bottom" id="Python Console" order="13" sideWeight="0.49733758" weight="0.32700995" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Remote Host" order="3" />
-      <window_info anchor="right" id="SciView" order="4" visible="true" weight="0.28040057" />
+      <window_info anchor="right" id="SciView" order="4" visible="true" weight="0.11802575" />
       <window_info anchor="right" id="Database" order="5" weight="0.09298999" />
     </layout>
   </component>
@@ -579,7 +602,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/train.py</url>
-          <line>141</line>
+          <line>144</line>
           <option name="timeStamp" value="351" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -614,12 +637,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/train.py</url>
-          <line>300</line>
+          <line>314</line>
           <option name="timeStamp" value="439" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/train.py</url>
-          <line>303</line>
+          <line>317</line>
           <option name="timeStamp" value="443" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -629,12 +652,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/train.py</url>
-          <line>306</line>
+          <line>320</line>
           <option name="timeStamp" value="507" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/train.py</url>
-          <line>305</line>
+          <line>319</line>
           <option name="timeStamp" value="508" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -644,28 +667,43 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/train.py</url>
-          <line>320</line>
+          <line>334</line>
           <option name="timeStamp" value="512" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/post/domain_classfication.py</url>
-          <line>79</line>
+          <line>71</line>
           <option name="timeStamp" value="516" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/post/domain_classfication.py</url>
-          <line>75</line>
+          <line>67</line>
           <option name="timeStamp" value="517" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/post/domain_classfication.py</url>
-          <line>55</line>
+          <line>57</line>
           <option name="timeStamp" value="526" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/post/domain_classfication.py</url>
-          <line>46</line>
+          <line>48</line>
           <option name="timeStamp" value="529" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/post/plot_tsne.py</url>
+          <line>16</line>
+          <option name="timeStamp" value="535" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/post/plot_tsne.py</url>
+          <line>43</line>
+          <option name="timeStamp" value="536" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/train.py</url>
+          <line>286</line>
+          <option name="timeStamp" value="538" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -687,47 +725,47 @@
   <component name="debuggerHistoryManager">
     <expressions id="evaluateCodeFragment">
       <expression>
-        <expression-string>input</expression-string>
+        <expression-string>data['acts'][idx]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>y10</expression-string>
+        <expression-string>dialogues[dialogue]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>yy</expression-string>
+        <expression-string>data['sys']</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>Xs</expression-string>
+        <expression-string>dialogues</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>ys</expression-string>
+        <expression-string>data</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.stack(Xs)</expression-string>
+        <expression-string>goal</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>[int(y[i].min(0)[1]) for i in range(len(y))]</expression-string>
+        <expression-string>new_goal</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>[y[i].min(0)[1] for i in range(len(y))]</expression-string>
+        <expression-string>'train' in goal</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>[y[i].min(0) for i in range(len(y))]</expression-string>
+        <expression-string>'traina' in goal</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
@@ -781,14 +819,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/logs/laptop-20190220180822.test">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="420">
-          <caret line="15" column="31" lean-forward="true" selection-start-line="15" selection-start-column="31" selection-end-line="15" selection-end-column="31" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/HBLSTM-CRF.py" />
     <entry file="file://$PROJECT_DIR$/logs/laptop-20190219164202.train">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="28">
@@ -930,9 +960,7 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/results/bsl_c/data/test_dials/test_dials_gen.json" />
-    <entry file="file://$PROJECT_DIR$/results/bsl_c/data/val_dials/val_dials_gen.json">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
+    <entry file="file://$PROJECT_DIR$/results/bsl_c/data/val_dials/val_dials_gen.json" />
     <entry file="file://$PROJECT_DIR$/results/moe_c/data/test_dials/test_dials_gen.json" />
     <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/Queue.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -979,16 +1007,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="504">
-          <caret line="100" column="11" selection-start-line="100" selection-start-column="4" selection-end-line="100" selection-end-column="11" />
-          <folding>
-            <element signature="e#38#103#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/site-packages/torch/__init__.pyi">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="188">
@@ -1017,13 +1035,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
           <caret line="154" selection-start-line="154" selection-end-line="154" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/site-packages/matplotlib/pyplot.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="188">
-          <caret line="734" column="4" selection-start-line="734" selection-start-column="4" selection-end-line="734" selection-end-column="4" />
         </state>
       </provider>
     </entry>
@@ -1064,10 +1075,69 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$USER_HOME$/anaconda3/envs/multiwoz/lib/python2.7/site-packages/matplotlib/pyplot.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="192">
+          <caret line="3833" column="4" selection-start-line="3833" selection-start-column="4" selection-end-line="3833" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/post/plot_tsne.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="698">
+          <caret line="42" column="16" lean-forward="true" selection-start-line="42" selection-start-column="16" selection-end-line="42" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/post/analyze_results.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="570">
+          <caret line="251" column="24" selection-start-line="251" selection-start-column="24" selection-end-line="251" selection-end-column="24" />
+          <folding>
+            <element signature="e#193#202#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/post/domain_classfication.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1260">
+          <caret line="51" column="31" selection-start-line="51" selection-start-column="31" selection-end-line="51" selection-end-column="31" />
+          <folding>
+            <element signature="e#292#335#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/requirements.txt">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="560">
+            <caret line="20" selection-start-line="20" selection-end-line="20" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/model/model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="11088">
+          <caret line="482" column="19" selection-start-line="482" selection-start-column="8" selection-end-line="482" selection-end-column="19" />
+          <folding>
+            <element signature="e#0#65#0" expanded="true" />
+            <element signature="e#2495#4877#0" />
+            <element signature="e#4907#6376#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/utils/util.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2716">
-          <caret line="140" column="30" selection-start-line="140" selection-start-column="30" selection-end-line="140" selection-end-column="30" />
+        <state relative-caret-position="3556">
+          <caret line="170" column="26" selection-start-line="170" selection-start-column="4" selection-end-line="170" selection-end-column="26" />
           <folding>
             <element signature="e#27#42#0" expanded="true" />
             <element signature="e#489#1090#0" />
@@ -1076,73 +1146,43 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/requirements.txt">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/model/model.py">
+    <entry file="file://$PROJECT_DIR$/model/evaluator.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="269">
-          <caret line="61" column="51" selection-start-line="61" selection-start-column="42" selection-end-line="61" selection-end-column="51" />
+        <state relative-caret-position="-3427">
+          <caret line="218" column="29" selection-start-line="194" selection-start-column="12" selection-end-line="194" selection-end-column="22" />
           <folding>
-            <element signature="e#0#65#0" expanded="true" />
-            <element signature="e#2495#4877#0" />
-            <element signature="e#4907#6376#0" />
-            <element signature="e#9216#16367#0" />
-            <element signature="e#16402#17656#0" />
-            <element signature="e#17687#34462#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-        <state split_layout="SPLIT">
-          <first_editor relative-caret-position="489">
-            <caret line="20" lean-forward="true" selection-start-line="20" selection-end-line="20" />
-          </first_editor>
-          <second_editor />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/post/analyze_results.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="336">
-          <caret line="251" column="24" selection-start-line="251" selection-start-column="24" selection-end-line="251" selection-end-column="24" />
-          <folding>
-            <element signature="e#193#202#0" expanded="true" />
+            <element signature="e#0#13#0" expanded="true" />
+            <element signature="e#344#1562#0" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="317">
-          <caret line="263" column="28" lean-forward="true" selection-start-line="263" selection-start-column="28" selection-end-line="263" selection-end-column="28" />
+        <state relative-caret-position="135">
+          <caret line="288" column="17" selection-start-line="288" selection-start-column="17" selection-end-line="288" selection-end-column="17" />
           <folding>
             <element signature="e#15#80#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/model/evaluator.py">
+    <entry file="file://$PROJECT_DIR$/post/evaluationOnIntents.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="79" selection-start-line="79" selection-end-line="79" />
+        <state relative-caret-position="101">
+          <caret line="48" column="29" selection-start-line="48" selection-start-column="29" selection-end-line="48" selection-end-column="29" />
           <folding>
-            <element signature="e#0#13#0" expanded="true" />
-            <element signature="e#344#1562#0" />
-            <element signature="e#4471#10645#0" />
-            <element signature="e#10696#17009#0" />
+            <element signature="e#193#258#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/post/domain_classfication.py">
+    <entry file="file://$PROJECT_DIR$/test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="52" column="19" lean-forward="true" selection-start-line="52" selection-start-column="19" selection-end-line="52" selection-end-column="19" />
+        <state relative-caret-position="-2656">
+          <caret line="83" column="24" selection-start-line="83" selection-start-column="24" selection-end-line="83" selection-end-column="24" />
           <folding>
-            <element signature="e#292#335#0" expanded="true" />
+            <element signature="e#38#103#0" expanded="true" />
           </folding>
         </state>
       </provider>

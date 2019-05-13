@@ -13,6 +13,7 @@ import numpy as np
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import seaborn as sns
+from plot_tsne import *
 
 # Scale and visualize the embedding vectors
 def plot_embedding(X, y, target, title=None):
@@ -44,33 +45,24 @@ def loadData(data_dir='../multiwoz-moe/data',intent_type='domain'):
     y = [int(y10[i].min(0)[1]) for i in range(len(y10))] # [batch, 1], labels
     X = np.concatenate((input_tensor, target_tensor, bs_tensor, db_tensor), 1)  # [batch, feature]
 
+    # plot_cluster(X, y, y)
     data_zs = pd.DataFrame(X)
     tsne = TSNE(n_components=2, init='pca', random_state=501)
     X_tsne = tsne.fit_transform(data_zs)  # 进行数据降维,降成两维
     print("Org data dimension is {}. Embedded data dimension is {}".format(X.shape[-1], X_tsne.shape[-1]))
-
-    # plot_embedding(X, y, target=y, title='Origin')
+    #
+    # # plot_embedding(X, y, target=y, title='Origin')
     # '''嵌入空间可视化'''
     x_min, x_max = X_tsne.min(0), X_tsne.max(0)
     X_norm = (X_tsne - x_min) / (x_max - x_min)  # 归一化
-    # plt.figure(figsize=(8, 8))
-    # for i in range(X_norm.shape[0]):
-    #     plt.text(X_norm[i, 0], X_norm[i, 1], str(y[i]), color=plt.cm.Set1(y[i]), fontdict={'weight': 'bold', 'size': 9})
-    df_subset = X_norm
-    df_subset['tsne-2d-one'] = X_norm[:, 0]
-    df_subset['tsne-2d-two'] = X_norm[:, 1]
-    plt.figure(figsize=(16, 10))
-    sns.scatterplot(
-        x="tsne-2d-one", y="tsne-2d-two",
-        hue="y",
-        palette=sns.color_palette("hls", 10),
-        data=X_norm,
-        legend="full",
-        alpha=0.3
-    )
+    plt.figure(figsize=(8, 8))
+    for i in range(X_norm.shape[0]):
+        plt.text(X_norm[i, 0], X_norm[i, 1], str(y[i]), color=plt.cm.Set1(y[i]), fontdict={'weight': 'bold', 'size': 9}, label=y)
+
 
     plt.xticks([])
     plt.yticks([])
+    plt.legend()
     plt.show()
 
     return input_tensor
