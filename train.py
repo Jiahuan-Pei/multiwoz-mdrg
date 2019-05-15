@@ -96,6 +96,12 @@ new_arg.add_argument('--use_moe_model', type=util.str2bool, nargs='?', const=Tru
 new_arg.add_argument('--debug', type=util.str2bool, nargs='?', const=True, default=False, help='if True use small data for debugging')
 new_arg.add_argument('--train_valid', type=util.str2bool, nargs='?', const=True, default=False, help='if True add valid data for training')
 
+new_arg.add_argument('--train_ratio', type=float, default=1.0) # use xx percent of training data
+new_arg.add_argument('--lambda_expert', type=float, default=0.5) # use xx percent of training data
+new_arg.add_argument('--mu_expert', type=float, default=0.5) # use xx percent of training data
+new_arg.add_argument('--gamma_expert', type=float, default=0.5) # use xx percent of training data
+# new_arg.add_argument('--job_id', type=str, default='default_job_id') # use xx percent of training data
+
 args = parser.parse_args()
 args.device = detected_device.type
 print('args.device={}'.format(args.device))
@@ -147,7 +153,7 @@ def eval_with_train3(model, val_dials, mode='Valid', policy='Greedy'):
 
 def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor=None, name=None):
 
-    loss, loss_acts, grad, prob = model.model_train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
+    loss, loss_acts, grad = model.model_train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
     # pp added: experts' loss
     # print('@'*20, '\n', target_tensor)
     if False and mask_tensor is not None:  # data separate by intents
@@ -160,10 +166,12 @@ def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, i
                 # print(mask)
                 # print(target_tensor_i)
                 # print('*'*50)
-                loss_i, loss_acts_i, grad_i, prob_i = model.model_train(input_tensor, input_lengths, target_tensor_i, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
+                loss_i, loss_acts_i, grad_i = model.model_train(input_tensor, input_lengths, target_tensor_i, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
                 gen_loss_list.append(loss_i)
         # print('loss', loss, '; mean_experts_loss', torch.mean(torch.tensor(gen_loss_list)), '\ngen_loss_list', ['%.4f' % s if s!=0 else '0' for s in gen_loss_list])
-        loss = 0.5*loss + 0.5*torch.mean(torch.tensor(gen_loss_list))
+        # mu_expert = 0.5
+        mu_expert = args.mu_expert
+        loss = (1 - mu_expert) * loss + mu_expert * torch.mean(torch.tensor(gen_loss_list))
     #print(loss, loss_acts)
     print_loss_total += loss
     print_act_total += loss_acts
@@ -201,6 +209,9 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
             print_loss_total, print_act_total, print_grad_total = trainOne(print_loss_total, print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor)
             if step > 1 and args.debug:
                 break # for debug
+            if args.train_ratio!=1.0 and step > args.train_ratio * len(train_loader):
+                break # only train of
+
         train_len = len(train_loader) # 886 data # len(train_loader.dataset.datasets) # 8423 dialogues
         print_loss_avg = print_loss_total / train_len
         print_act_total_avg = print_act_total / train_len

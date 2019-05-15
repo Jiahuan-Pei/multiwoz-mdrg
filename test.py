@@ -41,6 +41,9 @@ misc_arg.add_argument('--write_n_best', type=util.str2bool, nargs='?', const=Tru
 # 3. Here add new args
 new_arg = parser.add_argument_group('New')
 new_arg.add_argument('--intent_type', type=str, default=None, help='separate experts by intents: None, domain, sysact or domain_act') # pp added
+new_arg.add_argument('--lambda_expert', type=float, default=0.5) # use xx percent of training data
+new_arg.add_argument('--mu_expert', type=float, default=0.5) # use xx percent of training data
+new_arg.add_argument('--gamma_expert', type=float, default=0.5) # use xx percent of training data
 
 args = parser.parse_args()
 args.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -52,7 +55,7 @@ util.init_seed(args.seed)
 def load_config(args):
     config = util.unicode_to_utf8(
         # json.load(open('%s.json' % args.model_path, 'rb')))
-        json.load(open('{}/{}.json'.format(args.model_dir, args.model_name), 'rb')))
+        json.load(open('{}{}.json'.format(args.model_dir, args.model_name), 'rb')))
     for key, value in args.__args.items():
         try:
             config[key] = value.value
@@ -107,7 +110,7 @@ def decode(num=1):
     start_time = time.time()
     for ii in range(2):
         if ii == 0:
-            continue  # added for debug; ignore greedy search part
+            # continue  # added for debug; ignore greedy search part
             print(50 * '-' + 'GREEDY')
             model.beam_search = False
         else:
@@ -175,7 +178,7 @@ def decode(num=1):
 def decodeWrapper():
     # Load config file
     # with open(args.model_path + '.config') as f:
-    with open('{}/{}.config'.format(args.model_dir, args.model_name)) as f:
+    with open('{}{}.config'.format(args.model_dir, args.model_name)) as f:
         add_args = json.load(f)
         for k, v in add_args.items():
             setattr(args, k, v)
