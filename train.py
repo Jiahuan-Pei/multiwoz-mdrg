@@ -162,7 +162,7 @@ def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, i
                 gen_loss_list.append(loss_i)
         # print('loss', loss, '; mean_experts_loss', torch.mean(torch.tensor(gen_loss_list)), '\ngen_loss_list', ['%.4f' % s if s!=0 else '0' for s in gen_loss_list])
         # loss = 0.5*loss + 0.5*torch.mean(torch.tensor(gen_loss_list))
-        mu_expert = args.mu_expert
+        mu_expert = args.mu_expert # hyper
         loss = (1 - mu_expert) * loss + mu_expert * torch.mean(torch.tensor(gen_loss_list))
         # loss = 0.5*loss + 0.5*torch.mean(torch.tensor(gen_loss_list))
     #print(loss, loss_acts)

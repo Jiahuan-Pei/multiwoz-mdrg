@@ -25,6 +25,7 @@ default_device = detected_device
 # use_moe_loss = True # inner model weighting loss
 # learn_loss_weight = True
 # use_moe_model = True # inner model structure partition
+#
 
 # Shawn beam search decoding
 class BeamSearchNode(object):
