@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="beb5fe9d-cce8-41d5-a7f7-00537eddad6d" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
-    </list>
+    <list default="true" id="beb5fe9d-cce8-41d5-a7f7-00537eddad6d" name="Default Changelist" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -411,12 +408,12 @@
       <workItem from="1556175268668" duration="2632000" />
       <workItem from="1556876710355" duration="4487000" />
       <workItem from="1557999379607" duration="712000" />
-      <workItem from="1558000314158" duration="699000" />
+      <workItem from="1558000314158" duration="729000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="439257000" />
+    <option name="totallyTimeSpent" value="439287000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -429,9 +426,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
-    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.14520743" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.14520743" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -445,7 +441,7 @@
       <window_info anchor="bottom" id="Version Control" order="8" sideWeight="0.4997284" weight="0.3272901" />
       <window_info anchor="bottom" id="File Transfer" order="9" weight="0.17100371" />
       <window_info anchor="bottom" id="Database Changes" order="10" />
-      <window_info anchor="bottom" id="Terminal" order="11" sideWeight="0.49733758" visible="true" weight="0.21065675" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="11" sideWeight="0.49733758" visible="true" weight="0.21065675" />
       <window_info anchor="bottom" id="Event Log" order="12" sideWeight="0.40772533" side_tool="true" weight="0.45800525" />
       <window_info anchor="bottom" id="Python Console" order="13" sideWeight="0.49733758" weight="0.32713756" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
