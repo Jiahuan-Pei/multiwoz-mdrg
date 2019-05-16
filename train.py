@@ -6,6 +6,8 @@ import json
 import random
 import time
 from io import open
+import os
+import shutil
 
 import numpy as np
 import torch
@@ -34,6 +36,7 @@ data_arg.add_argument('--log_dir', type=str, default='logs')
 data_arg.add_argument('--model_dir', type=str, default='results/bsl_g/model/')
 data_arg.add_argument('--model_name', type=str, default='translate.ckpt')
 data_arg.add_argument('--train_output', type=str, default='results/bsl_g/data/train_dials/', help='Training output dir path')
+data_arg.add_argument('--decode_output', type=str, default='results/bsl_g/data/test_dials/', help='Decoding output dir path')
 
 # 2.Network
 net_arg = parser.add_argument_group(title='Network')
@@ -93,6 +96,12 @@ new_arg.add_argument('--use_moe_model', type=util.str2bool, nargs='?', const=Tru
 new_arg.add_argument('--debug', type=util.str2bool, nargs='?', const=True, default=False, help='if True use small data for debugging')
 new_arg.add_argument('--train_valid', type=util.str2bool, nargs='?', const=True, default=False, help='if True add valid data for training')
 new_arg.add_argument('--mu_expert', type=float, default=0.5)
+
+new_arg.add_argument('--train_ratio', type=float, default=1.0) # use xx percent of training data
+new_arg.add_argument('--lambda_expert', type=float, default=0.5) # use xx percent of training data
+new_arg.add_argument('--mu_expert', type=float, default=0.5) # use xx percent of training data
+new_arg.add_argument('--gamma_expert', type=float, default=0.5) # use xx percent of training data
+# new_arg.add_argument('--job_id', type=str, default='default_job_id') # use xx percent of training data
 
 args = parser.parse_args()
 args.device = detected_device.type
@@ -161,10 +170,11 @@ def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, i
                 loss_i, loss_acts_i, grad_i = model.model_train(input_tensor, input_lengths, target_tensor_i, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
                 gen_loss_list.append(loss_i)
         # print('loss', loss, '; mean_experts_loss', torch.mean(torch.tensor(gen_loss_list)), '\ngen_loss_list', ['%.4f' % s if s!=0 else '0' for s in gen_loss_list])
-        # loss = 0.5*loss + 0.5*torch.mean(torch.tensor(gen_loss_list))
-        mu_expert = args.mu_expert # hyper
+
+        # mu_expert = 0.5
+        mu_expert = args.mu_expert
         loss = (1 - mu_expert) * loss + mu_expert * torch.mean(torch.tensor(gen_loss_list))
-        # loss = 0.5*loss + 0.5*torch.mean(torch.tensor(gen_loss_list))
+
     #print(loss, loss_acts)
     print_loss_total += loss
     print_act_total += loss_acts
@@ -202,6 +212,9 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
             print_loss_total, print_act_total, print_grad_total = trainOne(print_loss_total, print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor)
             if step > 1 and args.debug:
                 break # for debug
+            if args.train_ratio!=1.0 and step > args.train_ratio * len(train_loader):
+                break # only train of
+
         train_len = len(train_loader) # 886 data # len(train_loader.dataset.datasets) # 8423 dialogues
         print_loss_avg = print_loss_total / train_len
         print_act_total_avg = print_act_total / train_len
@@ -287,6 +300,17 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         # pp added: evaluate valid
         Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
         # Test_Scores.append(Test_Score)
+        # dumps the decoded output of the testset
+        if os.path.exists(args.decode_output):
+            shutil.rmtree(args.decode_output)
+            os.makedirs(args.decode_output)
+        else:
+            os.makedirs(args.decode_output)
+        try:
+            with open(args.decode_output + 'test_dials_gen.json', 'w') as outfile:
+                json.dump(test_dials_gen, outfile, indent=4)
+        except:
+            print('json.dump.err.test')
 
         model.train()
         # pp added: evaluation - Plan B

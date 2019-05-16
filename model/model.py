@@ -239,7 +239,7 @@ class SeqAttnDecoderRNN(nn.Module):
         return output, hidden  # , attn_weights
 
 class MoESeqAttnDecoderRNN(nn.Module):
-    def __init__(self, embedding_size, hidden_size, output_size, cell_type, k=1, dropout_p=0.1, max_length=30, device=default_device):
+    def __init__(self, embedding_size, hidden_size, output_size, cell_type, k=1, dropout_p=0.1, max_length=30, args=None,  device=default_device):
         super(MoESeqAttnDecoderRNN, self).__init__()
         # Define parameters
         self.hidden_size = hidden_size
@@ -249,6 +249,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         self.dropout_p = dropout_p
         self.k = k
         self.device = device
+        self.args = args
 
         # Define layers
         self.embedding = nn.Embedding(output_size, embedding_size)
@@ -259,7 +260,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         self.rnn = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p)
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
-        self.moe_fc = nn.Linear(output_size*(self.k+1), (self.k+1))
+        self.moe_fc = nn.Linear(output_size*(self.k), (self.k))
         self.out = nn.Linear(hidden_size, output_size)
         self.score = nn.Linear(self.hidden_size + self.hidden_size, self.hidden_size)
         self.attn_combine = nn.Linear(embedding_size + hidden_size, embedding_size)
@@ -304,9 +305,13 @@ class MoESeqAttnDecoderRNN(nn.Module):
         output = F.log_softmax(self.out(output), dim=1) # self.out(output)[batch, out_vocab]
         return output, hidden, embedded.transpose(0, 1)  # , attn_weights
 
-    def moe_layer(self, decoder_output_list, decoder_hidden_list, embedded_list):
+    def moe_layer(self, decoder_output_list, decoder_hidden_list, embedded_list, gamma_expert):
         # output
-        cat_dec_out = torch.cat(decoder_output_list, -1) # (B, (k+1)*V)
+        chair_dec_out = decoder_output_list[0] # chair
+        expert_dec_out_list = decoder_output_list[1:] # experts
+        chair_dec_hid = decoder_hidden_list[0] # chair
+        expert_dec_hid_list = decoder_hidden_list[1:] # experts
+        cat_dec_out = torch.cat(expert_dec_out_list, -1) # (B, (k+1)*V) # Experts
         # MOE weights computation + normalization ------ Start
         moe_weights = self.moe_fc(cat_dec_out) #[Batch, Intent]
         moe_weights = F.log_softmax(moe_weights, dim=1)
@@ -322,19 +327,20 @@ class MoESeqAttnDecoderRNN(nn.Module):
         norm_weights = torch.sum(moe_weights, dim=1)
         norm_weights = norm_weights.unsqueeze(1)
         moe_weights = torch.div(moe_weights, norm_weights) # [B, I]
-        moe_weights = moe_weights.permute(1,0).unsqueeze(-1) # [I, B, 1]
+        moe_weights = moe_weights.permute(1,0).unsqueeze(-1) # [I, B, 1]; debug:[8,2,1]
         # MOE weights computation + normalization ------ End
         # output
-        moe_weights_output = moe_weights.expand(-1, -1, decoder_output_list[0].size(-1))  # [I, B, V]
-        decoder_output_tensor = torch.stack(decoder_output_list) # [I, B, V]
-        output = decoder_output_tensor.mul(moe_weights_output).sum(0)  # [B, V]
-
+        moe_weights_output = moe_weights.expand(-1, -1, expert_dec_out_list[0].size(-1))  # [I, B, V]; [8,2,400]
+        decoder_output_tensor = torch.stack(expert_dec_out_list) # [I, B, V]
+        output = decoder_output_tensor.mul(moe_weights_output).sum(0)  # [B, V]; [2, 400]
+        # weighting
+        output = gamma_expert * output + (1-gamma_expert) * chair_dec_out # [2, 400]
         # hidden
-        moe_weights_hidden = moe_weights.expand(-1, -1, decoder_hidden_list[0][0].size(-1))  # [I, B, H]
-        stack_dec_hid = torch.stack([a.squeeze(0) for a, b in decoder_hidden_list]), torch.stack([b.squeeze(0) for a, b in decoder_hidden_list]) # [I, B, H]
+        moe_weights_hidden = moe_weights.expand(-1, -1, expert_dec_hid_list[0][0].size(-1))  # [I, B, H]; [8,2,5]
+        stack_dec_hid = torch.stack([a.squeeze(0) for a, b in expert_dec_hid_list]), torch.stack([b.squeeze(0) for a, b in expert_dec_hid_list]) # [I, B, H]
         hidden = stack_dec_hid[0].mul(moe_weights_hidden).sum(0).unsqueeze(0), stack_dec_hid[1].mul(moe_weights_hidden).sum(0).unsqueeze(0) # [B, H]
-
-        return output, hidden # output[B, V]; hidden[1, B, H]
+        hidden = gamma_expert * hidden[0] + (1-gamma_expert) * chair_dec_hid[0], gamma_expert * hidden[1] + (1-gamma_expert) * chair_dec_hid[1]
+        return output, hidden # output[B, V] -- [2, 400] ; hidden[1, B, H] -- [1, 2, 5]
 
     def tokenMoE(self, decoder_input, decoder_hidden, encoder_outputs, mask_tensor):
         # decoder_input[batch, 1]; decoder_hidden: tuple element is a tensor[1, batch, hidden], encoder_outputs[maxlen_target, batch, hidden]
@@ -342,6 +348,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         output_c, hidden_c, embedded_c = self.expert_forward(input=decoder_input, hidden=decoder_hidden,
                                                              encoder_outputs=encoder_outputs)
         decoder_output_list, decoder_hidden_list, embedded_list = [output_c], [hidden_c], [embedded_c]
+        # decoder_output_list, decoder_hidden_list, embedded_list = [], [], []
         # count = 0
         for mask in mask_tensor: # each intent has a mask [Batch, 1]
             decoder_input_k = decoder_input.clone().masked_fill_(mask, value=PAD_token) # if assigned PAD_token it will count loss
@@ -358,7 +365,10 @@ class MoESeqAttnDecoderRNN(nn.Module):
             embedded_list.append(embedded_k)
 
         # print('count=', count) # 10/31 will count for loss
-        decoder_output, decoder_hidden = self.moe_layer(decoder_output_list, decoder_hidden_list, embedded_list)
+        gamma_expert = self.args.gamma_expert
+        decoder_output, decoder_hidden = self.moe_layer(decoder_output_list, decoder_hidden_list, embedded_list, gamma_expert)
+        # decoder_output = gamma_expert * decoder_output + (1 - gamma_expert) * output_c
+        # decoder_hidden = gamma_expert * decoder_hidden + (1 - gamma_expert) * hidden_c
         # output = output.squeeze(0)  # (1,B,H)->(B,H)
         # output = F.log_softmax(self.out(output), dim=1) # self.out(output)[batch, out_vocab]
         return decoder_output, decoder_hidden
@@ -368,8 +378,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
             output, hidden = self.tokenMoE(input, hidden, encoder_outputs, mask_tensor)
         else:
             pass
-            # output, hidden, _ = self.expert_forward(input, hidden, encoder_outputs)
-        return output, hidden  # , attn_weights
+            output, hidden, _ = self.expert_forward(input, hidden, encoder_outputs)
+        return output, hidden #, mask_tensor  # , attn_weights
 
 class DecoderRNN(nn.Module):
     def __init__(self, embedding_size, hidden_size, output_size, cell_type, dropout=0.1, device=default_device):
@@ -467,7 +477,7 @@ class Model(nn.Module):
 
         # pp added: intent_type branch
         if self.args.intent_type and self.args.use_moe_model:
-            self.decoder = MoESeqAttnDecoderRNN(self.emb_size, self.hid_size_dec, len(self.output_lang_index2word), self.cell_type, self.k, self.dropout, self.max_len)
+            self.decoder = MoESeqAttnDecoderRNN(self.emb_size, self.hid_size_dec, len(self.output_lang_index2word), self.cell_type, self.k, self.dropout, self.max_len, self.args)
         elif self.use_attn:
             if self.attn_type == 'bahdanau':
                 self.decoder = SeqAttnDecoderRNN(self.emb_size, self.hid_size_dec, len(self.output_lang_index2word), self.cell_type, self.dropout, self.max_len)
@@ -502,7 +512,9 @@ class Model(nn.Module):
                 gen_loss_tensor = torch.as_tensor(torch.stack(gen_loss_list), device=self.device)
                 self.gen_loss = self.moe_loss_layer(gen_loss_tensor)
             else: # hyper weights
-                self.gen_loss = 0.5 * self.gen_loss + 0.5 * torch.mean(torch.tensor(gen_loss_list))
+                # lambda_expert = 0.5
+                lambda_expert = self.args.lambda_expert
+                self.gen_loss = lambda_expert * self.gen_loss + (1-lambda_expert) * torch.mean(torch.tensor(gen_loss_list))
         self.loss = self.gen_loss
         self.loss.backward()
         grad = self.clipGradients()

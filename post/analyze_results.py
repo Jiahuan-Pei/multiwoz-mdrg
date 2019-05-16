@@ -18,7 +18,7 @@ def auto_display_subplots(df_list, title_list, column=3, label_names=None):
     c = column  # num of columns
     n = len(df_list)
     r = n // c if n % c == 0 else n // c + 1
-    fig, axes = plt.subplots(r, c)
+    fig, axes = plt.subplots(r, c, constrained_layout=True)
     handles = []
     for i in range(n):
         if i < n:
@@ -45,6 +45,7 @@ def auto_display_subplots(df_list, title_list, column=3, label_names=None):
                labels=label_names,  # The labels for each line
                loc="upper center",  # Position of legend
                bbox_to_anchor=(0.5, 0.06),
+               # ncol=len(label_names),
                ncol=len(use_names),
                borderaxespad=0.0,  # Small spacing around legend box
                title="",  # Title for the legend

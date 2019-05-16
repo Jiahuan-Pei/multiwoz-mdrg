@@ -9,6 +9,16 @@ Python 2 with pip
 # Quick start
 In repo directory:
 
+## Install the required packages
+- Using Conda:
+```console
+cd multiwoz-moe
+conda create --name multiwoz python=2.7 anaconda
+source activate multiwoz
+conda install --file requirements.txt 
+conda install pytorch torchvision -c pytorch
+```  
+
 ## Preprocessing
 To download and pre-process the data run:
 

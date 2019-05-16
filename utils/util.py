@@ -186,5 +186,12 @@ def loadIntentDictionaries(intent_type='domain', intent_file='../data/intents.js
     else:
         return None, None
 
+# TODO: initialise paras of a model in the same way
+def init_params(model):
+    from torch.nn.init import xavier_uniform_
+    for name, param in model.named_parameters():
+        print(name, param.size())
+        if param.data.dim() > 1:
+            xavier_uniform_(param.data)
 # pp added -- End
 

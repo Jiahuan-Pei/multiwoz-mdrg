@@ -114,6 +114,104 @@ def evaluateModel(dialogues, val_dials, delex_path, mode='Valid'):
     except:
         print('SCORE ERROR')
 
+def evaluateModelOnIntent(dialogues, val_dials, delex_path, intent, mode='Valid'):
+    """Gathers statistics for the whole sets."""
+    try:
+        fin1 = file(delex_path)
+    except:
+        print('cannot find the delex file!=', delex_path)
+    delex_dialogues = json.load(fin1)
+    successes, matches = 0, 0
+    total = 0
+    total_turns = 0
+    total_dials = 0
+
+    gen_stats = {'restaurant': [0, 0, 0], 'hotel': [0, 0, 0], 'attraction': [0, 0, 0], 'train': [0, 0,0], 'taxi': [0, 0, 0],
+             'hospital': [0, 0, 0], 'police': [0, 0, 0]}
+    sng_gen_stats = {'restaurant': [0, 0, 0], 'hotel': [0, 0, 0], 'attraction': [0, 0, 0], 'train': [0, 0, 0],
+                     'taxi': [0, 0, 0],
+                     'hospital': [0, 0, 0], 'police': [0, 0, 0]}
+
+    for filename, dial in dialogues.items():
+        data = delex_dialogues[filename]
+
+        goal, _, _, requestables, _ = evaluateRealDialogue(data, filename)
+
+        # filter goal & requestbles using domain
+        new_goal = {}; new_req = {}
+        for g in goal:
+            if intent.lower() in g:
+                new_goal[g] = goal[g]
+        for r in requestables:
+            if intent.lower() in r:
+                new_req[r]=requestables[r]
+
+        success, match, stats = evaluateGeneratedDialogue(dial, new_goal, data, new_req)
+
+        successes += success
+        matches += match
+        total += 1
+
+
+        for domain in gen_stats.keys():
+            gen_stats[domain][0] += stats[domain][0]
+            gen_stats[domain][1] += stats[domain][1]
+            gen_stats[domain][2] += stats[domain][2]
+
+
+        if 'SNG' in filename:
+            for domain in gen_stats.keys():
+                sng_gen_stats[domain][0] += stats[domain][0]
+                sng_gen_stats[domain][1] += stats[domain][1]
+                sng_gen_stats[domain][2] += stats[domain][2]
+
+    # BLUE SCORE
+    corpus = []
+    model_corpus = []
+    bscorer = BLEUScorer()
+
+    count_wrong_len = 0
+    for dialogue in dialogues:
+        data = val_dials[dialogue]
+        model_turns, corpus_turns = [], []
+        flag = False
+        if len(data['sys']) == len(dialogues[dialogue]):
+            for idx, turn in enumerate(data['sys']):
+                act = data['acts'][idx]  # for different intents
+                holding_intents = [a.split('-')[0] for a in act]
+                model_turn = dialogues[dialogue][idx]
+                if intent in holding_intents:
+                    corpus_turns.append([turn])
+                    model_turns.append([model_turn])
+                    total_turns += 1
+                    flag = True
+            corpus.extend(corpus_turns)
+            model_corpus.extend(model_turns)
+        else:
+            count_wrong_len += 1
+            print('wrong length!!!')
+
+        if flag:
+            total_dials +=1
+
+    if count_wrong_len:
+        print('count_wrong_len_ratio={}/{}'.format(count_wrong_len, len(dialogues)))
+    # Print results
+    try:
+        BLEU = bscorer.score(model_corpus, corpus)
+        MATCHES = (matches / float(total) * 100)
+        SUCCESS = (successes / float(total) * 100)
+        SCORE = 0.5 * MATCHES + 0.5 * SUCCESS + 100 * BLEU
+        print '%s BLEU: %.4f' % (mode, BLEU)
+        print '%s Matches: %2.2f%%' % (mode, MATCHES)
+        print '%s Success: %2.2f%%' % (mode, SUCCESS)
+        print '%s Score: %.4f' % (mode, SCORE)
+        print '%s Dialogues: %s' % (mode, total_dials)
+        print '%s Evaluated Turns: %s' % (mode, total_turns)
+        return BLEU, MATCHES, SUCCESS, SCORE, total
+    except:
+        print('SCORE ERROR')
+
 def evaluateGeneratedDialogue(dialog, goal, realDialogue, real_requestables):
     """Evaluates the dialogue created by the model.
     First we load the user goal of the dialogue, then for each turn
