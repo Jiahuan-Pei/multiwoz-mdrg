@@ -72,7 +72,7 @@ misc_arg.add_argument('--batch_size', type=int, default=64, metavar='N', help='i
 misc_arg.add_argument('--db_size', type=int, default=30)
 misc_arg.add_argument('--bs_size', type=int, default=94)
 misc_arg.add_argument('--beam_width', type=int, default=10, help='Beam width used in beamsearch')
-
+#
 # 5. Here add new args
 new_arg = parser.add_argument_group('New')
 new_arg.add_argument('--intent_type', type=str, default=None, help='separate experts by intents: None, domain, sysact or domain_act') # pp added
@@ -92,6 +92,7 @@ new_arg.add_argument('--learn_loss_weight', type=util.str2bool, nargs='?', const
 new_arg.add_argument('--use_moe_model', type=util.str2bool, nargs='?', const=True, default=False, help='inner model structure partition')
 new_arg.add_argument('--debug', type=util.str2bool, nargs='?', const=True, default=False, help='if True use small data for debugging')
 new_arg.add_argument('--train_valid', type=util.str2bool, nargs='?', const=True, default=False, help='if True add valid data for training')
+new_arg.add_argument('--mu_expert', type=float, default=0.5)
 
 args = parser.parse_args()
 args.device = detected_device.type
@@ -160,7 +161,10 @@ def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, i
                 loss_i, loss_acts_i, grad_i = model.model_train(input_tensor, input_lengths, target_tensor_i, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
                 gen_loss_list.append(loss_i)
         # print('loss', loss, '; mean_experts_loss', torch.mean(torch.tensor(gen_loss_list)), '\ngen_loss_list', ['%.4f' % s if s!=0 else '0' for s in gen_loss_list])
-        loss = 0.5*loss + 0.5*torch.mean(torch.tensor(gen_loss_list))
+        # loss = 0.5*loss + 0.5*torch.mean(torch.tensor(gen_loss_list))
+        mu_expert = args.mu_expert
+        loss = (1 - mu_expert) * loss + mu_expert * torch.mean(torch.tensor(gen_loss_list))
+        # loss = 0.5*loss + 0.5*torch.mean(torch.tensor(gen_loss_list))
     #print(loss, loss_acts)
     print_loss_total += loss
     print_act_total += loss_acts
