@@ -260,7 +260,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         self.rnn = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p)
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
-        self.moe_fc = nn.Linear(output_size*(self.k), (self.k))
+        self.moe_fc = nn.Linear(output_size*(self.k+1), (self.k+1))
         self.out = nn.Linear(hidden_size, output_size)
         self.score = nn.Linear(self.hidden_size + self.hidden_size, self.hidden_size)
         self.attn_combine = nn.Linear(embedding_size + hidden_size, embedding_size)
@@ -311,7 +311,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         expert_dec_out_list = decoder_output_list[1:] # experts
         chair_dec_hid = decoder_hidden_list[0] # chair
         expert_dec_hid_list = decoder_hidden_list[1:] # experts
-        cat_dec_out = torch.cat(expert_dec_out_list, -1) # (B, (k+1)*V) # Experts
+        cat_dec_out = torch.cat(decoder_output_list, -1) # (B, (k+1)*V) # Experts
         # MOE weights computation + normalization ------ Start
         moe_weights = self.moe_fc(cat_dec_out) #[Batch, Intent]
         moe_weights = F.log_softmax(moe_weights, dim=1)
@@ -330,14 +330,14 @@ class MoESeqAttnDecoderRNN(nn.Module):
         moe_weights = moe_weights.permute(1,0).unsqueeze(-1) # [I, B, 1]; debug:[8,2,1]
         # MOE weights computation + normalization ------ End
         # output
-        moe_weights_output = moe_weights.expand(-1, -1, expert_dec_out_list[0].size(-1))  # [I, B, V]; [8,2,400]
-        decoder_output_tensor = torch.stack(expert_dec_out_list) # [I, B, V]
+        moe_weights_output = moe_weights.expand(-1, -1, decoder_output_list[0].size(-1))  # [I, B, V]; [8,2,400]
+        decoder_output_tensor = torch.stack(decoder_output_list) # [I, B, V]
         output = decoder_output_tensor.mul(moe_weights_output).sum(0)  # [B, V]; [2, 400]
         # weighting
         output = gamma_expert * output + (1-gamma_expert) * chair_dec_out # [2, 400]
         # hidden
-        moe_weights_hidden = moe_weights.expand(-1, -1, expert_dec_hid_list[0][0].size(-1))  # [I, B, H]; [8,2,5]
-        stack_dec_hid = torch.stack([a.squeeze(0) for a, b in expert_dec_hid_list]), torch.stack([b.squeeze(0) for a, b in expert_dec_hid_list]) # [I, B, H]
+        moe_weights_hidden = moe_weights.expand(-1, -1, decoder_hidden_list[0][0].size(-1))  # [I, B, H]; [8,2,5]
+        stack_dec_hid = torch.stack([a.squeeze(0) for a, b in decoder_hidden_list]), torch.stack([b.squeeze(0) for a, b in decoder_hidden_list]) # [I, B, H]
         hidden = stack_dec_hid[0].mul(moe_weights_hidden).sum(0).unsqueeze(0), stack_dec_hid[1].mul(moe_weights_hidden).sum(0).unsqueeze(0) # [B, H]
         hidden = gamma_expert * hidden[0] + (1-gamma_expert) * chair_dec_hid[0], gamma_expert * hidden[1] + (1-gamma_expert) * chair_dec_hid[1]
         return output, hidden # output[B, V] -- [2, 400] ; hidden[1, B, H] -- [1, 2, 5]

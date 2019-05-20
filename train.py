@@ -95,7 +95,6 @@ new_arg.add_argument('--learn_loss_weight', type=util.str2bool, nargs='?', const
 new_arg.add_argument('--use_moe_model', type=util.str2bool, nargs='?', const=True, default=False, help='inner model structure partition')
 new_arg.add_argument('--debug', type=util.str2bool, nargs='?', const=True, default=False, help='if True use small data for debugging')
 new_arg.add_argument('--train_valid', type=util.str2bool, nargs='?', const=True, default=False, help='if True add valid data for training')
-new_arg.add_argument('--mu_expert', type=float, default=0.5)
 
 new_arg.add_argument('--train_ratio', type=float, default=1.0) # use xx percent of training data
 new_arg.add_argument('--lambda_expert', type=float, default=0.5) # use xx percent of training data

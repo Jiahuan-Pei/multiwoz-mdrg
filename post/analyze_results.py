@@ -13,8 +13,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-def auto_display_subplots(df_list, title_list, column=3, label_names=None):
+def auto_display_subplots(df_list, title_list, column=3, label_names=None, sort_cols=True):
     label_names = df_list[0].columns.tolist() if label_names is None else label_names
+    if sort_cols:
+        for i, df in enumerate(df_list):
+            df_list[i] = df.apply(lambda x: x.sort_values().values)
     c = column  # num of columns
     n = len(df_list)
     r = n // c if n % c == 0 else n // c + 1
@@ -246,11 +249,11 @@ def view_consistence(outfile):
 if __name__ == "__main__":
 
     use_names = [
-        'Train Loss',
-        'Valid Loss',
-        'Valid BLEU',
-        'Valid Matches',
-        'Valid Success',
+        # 'Train Loss',
+        # 'Valid Loss',
+        # 'Valid BLEU',
+        # 'Valid Matches',
+        # 'Valid Success',
         'Test BLEU',
         'Test Matches',
         'Test Success',
@@ -259,4 +262,8 @@ if __name__ == "__main__":
     #     # view_bsl128valid()
     #     # view_bsl256valid()
     # view_consistence('bsl64_valid')
-    view_consistence('bsl64_no_valid')
+    # view_consistence('bsl64_no_valid')
+    view_consistence('bsl_s1') # sort_cols=True
+    view_consistence('bsl_s3')
+    view_consistence('bsl_s4')
+    view_consistence('bsl_s5')
