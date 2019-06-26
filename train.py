@@ -100,6 +100,7 @@ new_arg.add_argument('--train_ratio', type=float, default=1.0) # use xx percent 
 new_arg.add_argument('--lambda_expert', type=float, default=0.5) # use xx percent of training data
 new_arg.add_argument('--mu_expert', type=float, default=0.5) # use xx percent of training data
 new_arg.add_argument('--gamma_expert', type=float, default=0.5) # use xx percent of training data
+new_arg.add_argument('--SentMoE', type=util.str2bool, nargs='?', const=True, default=False, help='if True use sentence info')
 # new_arg.add_argument('--job_id', type=str, default='default_job_id') # use xx percent of training data
 
 args = parser.parse_args()

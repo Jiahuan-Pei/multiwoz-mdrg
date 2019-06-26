@@ -12,7 +12,7 @@ import numpy as np
 import torch
 
 from utils import util, multiwoz_dataloader
-from model.evaluator import evaluateModel
+from model.evaluator import evaluateModel, evaluteNLG
 from model.model import Model
 from utils.util import detected_device
 
@@ -44,7 +44,7 @@ new_arg.add_argument('--intent_type', type=str, default=None, help='separate exp
 new_arg.add_argument('--lambda_expert', type=float, default=0.5) # use xx percent of training data
 new_arg.add_argument('--mu_expert', type=float, default=0.5) # use xx percent of training data
 new_arg.add_argument('--gamma_expert', type=float, default=0.5) # use xx percent of training data
-
+new_arg.add_argument('--debug', type=util.str2bool, nargs='?', const=True, default=False, help='if True use small data for debugging')
 args = parser.parse_args()
 args.device = "cuda" if torch.cuda.is_available() else "cpu"
 print('args.device={}'.format(args.device))
@@ -143,7 +143,8 @@ def decode(num=1):
         except:
             print('json.dump.err.valid')
 
-        evaluateModel(val_dials_gen, val_dials, delex_path, mode='valid')
+        # evaluateModel(val_dials_gen, val_dials, delex_path, mode='valid')
+        # evaluteNLG(val_dials_gen, val_dials)
 
         # TESTING
         test_dials_gen = {}
@@ -170,7 +171,8 @@ def decode(num=1):
                 json.dump(test_dials_gen, outfile, indent=4)
         except:
             print('json.dump.err.test')
-        evaluateModel(test_dials_gen, test_dials, delex_path, mode='test')
+        # evaluateModel(test_dials_gen, test_dials, delex_path, mode='test')
+        evaluteNLG(test_dials_gen, test_dials)
 
     print('TIME:', time.time() - start_time)
 
@@ -181,6 +183,8 @@ def decodeWrapper():
     with open('{}{}.config'.format(args.model_dir, args.model_name)) as f:
         add_args = json.load(f)
         for k, v in add_args.items():
+            if k=='data_dir': # ignore this arg
+                continue
             setattr(args, k, v)
 
         args.mode = 'test'
@@ -200,7 +204,7 @@ def decodeWrapper():
         # except:
         #     print('cannot decode')
 
-        # args.model_path = args.original
+        #
 
 if __name__ == '__main__':
     decodeWrapper()

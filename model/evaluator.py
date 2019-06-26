@@ -360,7 +360,6 @@ def evaluateGeneratedDialogue(dialog, goal, realDialogue, real_requestables):
     #rint requests, 'DIFF', requests_real, 'SUCC', success
     return success, match, stats
 
-
 def evaluateRealDialogue(dialog, filename):
     """Evaluation of the real dialogue.
     First we loads the user goal and then go through the dialogue history.
@@ -510,3 +509,31 @@ def evaluateRealDialogue(dialog, filename):
 
     return goal, success, match, real_requestables, stats
 
+# use the open source evaluation for nlg-eval
+def evaluteNLG(gen_dials, ref_dialogues):
+    hyp_list, ref_list = [], []
+    for fname in gen_dials:
+        hyp_list.extend(gen_dials[fname])
+        ref_list.extend(ref_dialogues[fname]['sys'])
+
+    from nlgeval import NLGEval
+    nlgeval = NLGEval()  # loads the models
+    metrics_dict = nlgeval.compute_metrics(ref_list=ref_list, hyp_list=hyp_list)
+    print metrics_dict
+    return metrics_dict
+
+def evaluteNLGFiles(gen_dials_fpath, ref_dialogues_fpath):
+    with open(gen_dials_fpath, 'r') as gen, open(ref_dialogues_fpath, 'r') as ref:
+        gen_dials = json.load(gen)
+        ref_dialogues = json.load(ref)
+
+    hyp_list, ref_list = [], []
+    for fname in gen_dials:
+        hyp_list.extend(gen_dials[fname])
+        ref_list.extend(ref_dialogues[fname]['sys'])
+
+    from nlgeval import NLGEval
+    nlgeval = NLGEval()  # loads the models
+    metrics_dict = nlgeval.compute_metrics(ref_list=ref_list, hyp_list=hyp_list)
+    print metrics_dict
+    return metrics_dict

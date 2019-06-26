@@ -577,6 +577,25 @@ class Model(nn.Module):
 
             proba[:, t, :] = decoder_output # decoder_output[Batch, TargetVocab]
 
+        # if we consider sentence info
+        if self.args.SentMoE:
+           # generate target sequence step by step !!!
+           for t in range(target_len):
+               # pp added: moe chair
+               decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs,
+                                                             mask_tensor)  # decoder_output; decoder_hidden
+
+               use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False
+               if use_teacher_forcing:
+                   decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
+               else:
+                   # Without teacher forcing: use its own predictions as the next input
+                   topv, topi = decoder_output.topk(1)
+                   decoder_input = topi.squeeze().detach()  # detach from history as input
+
+               proba[:, t, :] = decoder_output  # decoder_output[Batch, TargetVocab]
+
+
         decoded_sent = None
 
         return proba, None, decoded_sent

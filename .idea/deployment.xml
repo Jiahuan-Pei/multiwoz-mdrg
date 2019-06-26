@@ -2,7 +2,7 @@
 <project version="4">
   <component name="PublishConfigData" autoUpload="On explicit save action">
     <serverData>
-      <paths name="JPeiSlurm">
+      <paths name="JPeiSlurmH0">
         <serverdata>
           <mappings>
             <mapping deploy="/home/jpei/multiwoz-without-changes" local="$PROJECT_DIR$" web="/" />
@@ -10,6 +10,13 @@
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/../multiwoz/results" />
           </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="JPeiSlurmH1">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/jpei/multiwoz-without-changes" local="$PROJECT_DIR$" web="/" />
+          </mappings>
         </serverdata>
       </paths>
     </serverData>
