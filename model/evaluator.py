@@ -509,7 +509,7 @@ def evaluateRealDialogue(dialog, filename):
 
     return goal, success, match, real_requestables, stats
 
-# use the open source evaluation for nlg-eval
+# use the open source evaluation for nlg-eval https://github.com/Maluuba/nlg-eval
 def evaluteNLG(gen_dials, ref_dialogues):
     hyp_list, ref_list = [], []
     for fname in gen_dials:
