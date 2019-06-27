@@ -71,17 +71,17 @@ for fname in os.listdir(exp_output_dir):
             item = metric_name, model, int(step), float(val)
             l.append(item)
         lines.extend(l)
-d = pd.DataFrame(lines, columns=['metric', 'model', 'step', 'val'])
+d = pd.DataFrame(lines, columns=['metric', 'models', 'step', 'val'])
 
 # auto_display_subplots(df_list, title_list, column=2, label_names=None)
 for metric in metric_list:
     metric = 'Matches' if metric=='Inform' else metric
     d_metric = d[d.metric==metric]
 
-    # make a dataframe for each model; cols[step, model1_val, model2_val, ...]
+    # make a dataframe for each models; cols[step, model1_val, model2_val, ...]
     frames_model = []
     for model in model_list:
-        d_model = d_metric[d_metric.model == model].sort_values(by=['step'])[['step', 'val']]  # extract data for each model
+        d_model = d_metric[d_metric.model == model].sort_values(by=['step'])[['step', 'val']]  # extract data for each models
         d_model = d_model.rename(columns={'val': model}) # rename val column
 
         frames_model.append(d_model)

@@ -3,7 +3,7 @@ Utility functions
 '''
 
 import argparse
-import cPickle as pkl
+import pickle as pkl
 import json
 import sys
 import math
@@ -42,7 +42,7 @@ def loadDialogue(model, val_file, input_tensor, target_tensor, bs_tensor, db_ten
     # Iterate over dialogue
     for idx, (usr, sys, bs, db, acts) in enumerate(
             zip(val_file['usr'], val_file['sys'], val_file['bs'], val_file['db'], val_file['acts'])):
-        tensor = [model.input_word2index(word) for word in usr.strip(' ').split(' ')] + [EOS_token]  # model.input_word2index(word)
+        tensor = [model.input_word2index(word) for word in usr.strip(' ').split(' ')] + [EOS_token]  # models.input_word2index(word)
         input_tensor.append(torch.as_tensor(tensor, dtype=torch.long, device=device))  # .view(-1, 1))
         # input_tensor.append(torch.LongTensor(tensor))  # .view(-1, 1))
 
@@ -186,7 +186,7 @@ def loadIntentDictionaries(intent_type='domain', intent_file='../data/intents.js
     else:
         return None, None
 
-# TODO: initialise paras of a model in the same way
+# TODO: initialise paras of a models in the same way
 def init_params(model):
     from torch.nn.init import xavier_uniform_
     for name, param in model.named_parameters():

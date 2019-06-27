@@ -7,8 +7,7 @@ from nltk.util import ngrams
 timepat = re.compile("\d{1,2}[:]\d{1,2}")
 pricepat = re.compile("\d{1,3}[.]\d{1,2}")
 
-
-fin = file('utils/mapping.pair')
+fin = open('utils/mapping.pair', 'r')
 replacements = []
 for line in fin.readlines():
     tok_from, tok_to = line.replace('\n', '').split('\t')
@@ -242,8 +241,8 @@ if __name__ == '__main__':
     text = "ndd 19.30 nndd"
     #print re.match("(\d+).(\d+)", text)
     m = re.findall("(\d+\.\d+)", text)
-    print m
+    print(m)
     #print m[0].strip('.')
-    print re.sub('\.', '', m[0])
+    print(re.sub('\.', '', m[0]))
     #print m.groups()
     #print text

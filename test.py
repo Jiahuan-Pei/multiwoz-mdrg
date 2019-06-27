@@ -12,8 +12,8 @@ import numpy as np
 import torch
 
 from utils import util, multiwoz_dataloader
-from model.evaluator import evaluateModel, evaluteNLG
-from model.model import Model
+from models.evaluator import evaluateModel, evaluteNLG, evaluteNLGFile, evaluteNLGFiles
+from models.model import Model
 from utils.util import detected_device
 
 # pp added: print out env
@@ -23,12 +23,12 @@ parser = argparse.ArgumentParser(description='multiwoz-bsl-te')
 # 1. Data & Dir
 data_arg = parser.add_argument_group('Data')
 data_arg.add_argument('--data_dir', type=str, default='data', help='the root directory of data')
-# data_arg.add_argument('--model_path', type=str, default='results/bsl_g/model/translate.ckpt', help='Path to a specific model checkpoint.')
-data_arg.add_argument('--model_dir', type=str, default='results/bsl_g/model/', help='Path to a specific model checkpoint')
-# parser.add_argument('--original', type=str, default='results/bsl_g/model/', help='Original dir.')
+# data_arg.add_argument('--model_path', type=str, default='results/bsl/models/translate.ckpt', help='Path to a specific models checkpoint.')
+data_arg.add_argument('--model_dir', type=str, default='results/bsl/models/', help='Path to a specific models checkpoint')
+# parser.add_argument('--original', type=str, default='results/bsl/models/', help='Original dir.')
 data_arg.add_argument('--model_name', type=str, default='translate.ckpt')
-data_arg.add_argument('--valid_output', type=str, default='results/bsl_g/data/val_dials/', help='Validation Decoding output dir path')
-data_arg.add_argument('--decode_output', type=str, default='results/bsl_g/data/test_dials/', help='Decoding output dir path')
+data_arg.add_argument('--valid_output', type=str, default='results/bsl/data/val_dials/', help='Validation Decoding output dir path')
+data_arg.add_argument('--decode_output', type=str, default='results/bsl/data/test_dials/', help='Decoding output dir path')
 
 # 2. MISC
 misc_arg = parser.add_argument_group('Misc')
@@ -117,10 +117,12 @@ def decode(num=1):
             print(50 * '-' + 'BEAM')
             model.beam_search = True
 
+        step = 0 if not args.debug else 2 # small sample for debug
+
         # VALIDATION
         val_dials_gen = {}
         valid_loss = 0
-        for name, val_file in val_dials.items():
+        for name, val_file in list(val_dials.items())[-step:]:
             loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
                                                               input_lang_word2index, output_lang_word2index,
                                                               args.intent_type, intent2index)
@@ -143,13 +145,13 @@ def decode(num=1):
         except:
             print('json.dump.err.valid')
 
-        # evaluateModel(val_dials_gen, val_dials, delex_path, mode='valid')
+        evaluateModel(val_dials_gen, val_dials, delex_path, mode='valid')
         # evaluteNLG(val_dials_gen, val_dials)
 
         # TESTING
         test_dials_gen = {}
         test_loss = 0
-        for name, test_file in test_dials.items():
+        for name, test_file in list(test_dials.items())[-step:]:
             loader = multiwoz_dataloader.get_loader_by_dialogue(test_file, name,
                                                               input_lang_word2index, output_lang_word2index,
                                                               args.intent_type, intent2index)
@@ -171,8 +173,8 @@ def decode(num=1):
                 json.dump(test_dials_gen, outfile, indent=4)
         except:
             print('json.dump.err.test')
-        # evaluateModel(test_dials_gen, test_dials, delex_path, mode='test')
-        evaluteNLG(test_dials_gen, test_dials)
+        evaluateModel(test_dials_gen, test_dials, delex_path, mode='test')
+        # evaluteNLG(test_dials_gen, test_dials)
 
     print('TIME:', time.time() - start_time)
 
@@ -208,3 +210,11 @@ def decodeWrapper():
 
 if __name__ == '__main__':
     decodeWrapper()
+    # evaluteNLGFile(gen_dials_fpath='results/bsl_20190510161309/data/test_dials/test_dials_gen.json',
+    #                 ref_dialogues_fpath='data/test_dials.json')
+    # evaluteNLGFiles(gen_dials_fpaths=['results/bsl_20190510161309/data/test_dials/test_dials_gen.json',
+    #                                  'results/moe1_20190510165545/data/test_dials/test_dials_gen.json'],
+                    # ref_dialogues_fpath='data/test_dials.json')
+    # from nlgeval import compute_metrics
+    # metrics_dict = compute_metrics(hypothesis='/Users/pp/Code/nlg-eval/examples/hyp.txt',
+    #                                references=['/Users/pp/Code/nlg-eval/examples/ref1.txt'])

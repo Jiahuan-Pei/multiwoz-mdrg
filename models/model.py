@@ -6,7 +6,8 @@ import operator
 import os
 import random
 from io import open
-from Queue import PriorityQueue
+from queue import PriorityQueue # for py3
+from functools import reduce # for py3
 
 import numpy as np
 import torch
@@ -14,7 +15,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import optim
 
-import policy
+import models.policy as policy
 
 from utils.util import SOS_token, EOS_token, PAD_token, detected_device
 default_device = detected_device
@@ -22,9 +23,9 @@ default_device = detected_device
 # EOS_token = 1
 # UNK_token = 2
 # PAD_token = 3
-# use_moe_loss = True # inner model weighting loss
+# use_moe_loss = True # inner models weighting loss
 # learn_loss_weight = True
-# use_moe_model = True # inner model structure partition
+# use_moe_model = True # inner models structure partition
 #
 
 # Shawn beam search decoding
@@ -753,7 +754,7 @@ class Model(nn.Module):
         torch.save(self.decoder.state_dict(), self.model_dir + self.model_name + '-' + str(iter) + '.dec')
 
         with open(self.model_dir + self.model_name + '.config', 'w') as f:
-            f.write(unicode(json.dumps(vars(self.args), ensure_ascii=False, indent=4)))
+            f.write(json.dumps(vars(self.args), ensure_ascii=False, indent=4))
 
     def loadModel(self, iter=0):
         print('Loading parameters of iter %s ' % iter)
@@ -762,37 +763,37 @@ class Model(nn.Module):
         self.decoder.load_state_dict(torch.load(self.model_dir + self.model_name + '-' + str(iter) + '.dec'))
 
     def input_index2word(self, index):
-        if self.input_lang_index2word.has_key(index):
+        if index in self.input_lang_index2word:
             return self.input_lang_index2word[index]
         else:
             raise UserWarning('We are using UNK')
 
     def output_index2word(self, index):
-        if self.output_lang_index2word.has_key(index):
+        if index in self.output_lang_index2word:
             return self.output_lang_index2word[index]
         else:
             raise UserWarning('We are using UNK')
 
     def input_word2index(self, index):
-        if self.input_lang_word2index.has_key(index):
+        if index in self.input_lang_word2index:
             return self.input_lang_word2index[index]
         else:
             return 2
 
     def output_word2index(self, index):
-        if self.output_lang_word2index.has_key(index):
+        if index in self.output_lang_word2index:
             return self.output_lang_word2index[index]
         else:
             return 2
     # pp added:
     def input_intent2index(self, intent):
-        if self.intent2index.has_key(intent):
+        if intent in self.intent2index:
             return self.intent2index[intent]
         else:
             return 0
 
     def input_index2intent(self, index):
-        if self.index2intent.has_key(index):
+        if index in self.index2intent:
             return self.index2intent[index]
         else:
             raise UserWarning('We are using UNK intent')

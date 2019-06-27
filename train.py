@@ -15,9 +15,9 @@ from torch.optim import Adam
 import torch.nn as nn
 
 from utils import util, multiwoz_dataloader
-from model.model import Model
+from models.model import Model
 from utils.util import detected_device, PAD_token
-from model.evaluator import evaluateModel
+from models.evaluator import evaluateModel
 # from tqdm import tqdm
 # SOS_token = 0
 # EOS_token = 1
@@ -33,10 +33,11 @@ parser = argparse.ArgumentParser(description='multiwoz-bsl-tr')
 data_arg = parser.add_argument_group(title='Data')
 data_arg.add_argument('--data_dir', type=str, default='data', help='the root directory of data')
 data_arg.add_argument('--log_dir', type=str, default='logs')
-data_arg.add_argument('--model_dir', type=str, default='results/bsl_g/model/')
+data_arg.add_argument('--model_dir', type=str, default='results/bsl/models/')
 data_arg.add_argument('--model_name', type=str, default='translate.ckpt')
-data_arg.add_argument('--train_output', type=str, default='results/bsl_g/data/train_dials/', help='Training output dir path')
-data_arg.add_argument('--decode_output', type=str, default='results/bsl_g/data/test_dials/', help='Decoding output dir path')
+data_arg.add_argument('--train_output', type=str, default='results/bsl/data/train_dials/', help='Training output dir path')
+data_arg.add_argument('--valid_output', type=str, default='results/bsl/data/val_dials/', help='Validation Decoding output dir path')
+data_arg.add_argument('--decode_output', type=str, default='results/bsl/data/test_dials/', help='Decoding output dir path')
 
 # 2.Network
 net_arg = parser.add_argument_group(title='Network')
@@ -84,15 +85,15 @@ new_arg.add_argument('--intent_type', type=str, default=None, help='separate exp
 # --use_moe_loss=True --learn_loss_weight=False --use_moe_model=False
 # 2. only weight loss & learn weights
 # --use_moe_loss=True --learn_loss_weight=True --use_moe_model=False
-# 3. only split model
+# 3. only split models
 # --use_moe_loss=False --learn_loss_weight=False --use_moe_model=True
 # 4. both & hyper weights
 # --use_moe_loss=True --learn_loss_weight=False --use_moe_model=True
 # 5. both & learn weights
 # --use_moe_loss=True --learn_loss_weight=True --use_moe_model=True
-new_arg.add_argument('--use_moe_loss', type=util.str2bool, nargs='?', const=True, default=False, help='inner model weighting loss')
+new_arg.add_argument('--use_moe_loss', type=util.str2bool, nargs='?', const=True, default=False, help='inner models weighting loss')
 new_arg.add_argument('--learn_loss_weight', type=util.str2bool, nargs='?', const=True, default=False, help='learn weight of moe loss')
-new_arg.add_argument('--use_moe_model', type=util.str2bool, nargs='?', const=True, default=False, help='inner model structure partition')
+new_arg.add_argument('--use_moe_model', type=util.str2bool, nargs='?', const=True, default=False, help='inner models structure partition')
 new_arg.add_argument('--debug', type=util.str2bool, nargs='?', const=True, default=False, help='if True use small data for debugging')
 new_arg.add_argument('--train_valid', type=util.str2bool, nargs='?', const=True, default=False, help='if True add valid data for training')
 
@@ -229,7 +230,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         if args.train_valid: # if add valid data for training
             model.train()
             valid_loss = 0
-            for name, val_file in val_dials.items()[-step:]:
+            for name, val_file in list(val_dials.items())[-step:]:
                 loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
                                                                     input_lang_word2index, output_lang_word2index,
                                                                     args.intent_type, intent2index)
@@ -252,7 +253,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         model.eval()
         val_dials_gen = {}
         valid_loss = 0
-        for name, val_file in val_dials.items()[-step:]:
+        for name, val_file in list(val_dials.items())[-step:]:  # for py3
             loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
                                                                 input_lang_word2index, output_lang_word2index,
                                                                 args.intent_type, intent2index)
@@ -267,10 +268,10 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
             loss = model.gen_criterion(proba, target_tensor.view(-1))
             valid_loss += loss.item()
             # pp added: evaluation - Plan A
-            # model.eval()
+            # models.eval()
             output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
                                                         db_tensor, bs_tensor, mask_tensor)
-            # model.train()
+            # models.train()
             val_dials_gen[name] = output_words
         valid_len = len(val_dials) # 1000
         valid_loss /= valid_len
@@ -280,12 +281,22 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         # BLEU, MATCHES, SUCCESS, SCORE, TOTAL
         Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
         # Valid_Scores.append(Valid_Score)
+        if os.path.exists(args.valid_output):
+            shutil.rmtree(args.valid_output)
+            os.makedirs(args.valid_output)
+        else:
+            os.makedirs(args.valid_output)
+        try:
+            with open(args.valid_output + 'val_dials_gen.json', 'w') as outfile:
+                json.dump(val_dials_gen, outfile, indent=4)
+        except:
+            print('json.dump.err.valid')
 
         # Testing
         # pp added
         model.eval()
         test_dials_gen ={}
-        for name, test_file in test_dials.items()[-step:]:
+        for name, test_file in list(test_dials.items())[-step:]:
             loader = multiwoz_dataloader.get_loader_by_dialogue(test_file, name,
                                                                 input_lang_word2index, output_lang_word2index,
                                                                 args.intent_type, intent2index)
@@ -315,9 +326,9 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         model.train()
         # pp added: evaluation - Plan B
         # print(50 * '=' + 'Evaluating start...')
-        # # eval_with_train(model)
-        # eval_with_train3(model, val_dials, mode='valid')
-        # eval_with_train3(model, test_dials, mode='test')
+        # # eval_with_train(models)
+        # eval_with_train3(models, val_dials, mode='valid')
+        # eval_with_train3(models, test_dials, mode='test')
         # print(50 * '=' + 'Evaluating end...')
 
         model.saveModel(epoch)
@@ -355,7 +366,7 @@ if __name__ == '__main__':
     delex_path = '%s/multi-woz/delex.json' % args.data_dir
 
     model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index, intent2index, index2intent)
-    # model = nn.DataParallel(model, device_ids=[0,1]) # latter for parallel
+    # models = nn.DataParallel(models, device_ids=[0,1]) # latter for parallel
     model = model.to(detected_device)
     if args.load_param:
         model.loadModel(args.epoch_load)

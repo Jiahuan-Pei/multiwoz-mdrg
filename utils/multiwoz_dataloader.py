@@ -39,13 +39,13 @@ class MultiwozSingleDataset(Dataset):
         return len(self.input_tensor)
 
     def input_word2index(self, index):
-        if self.src_word2id.has_key(index):
+        if index in self.src_word2id:
             return self.src_word2id[index]
         else:
             return UNK_token
 
     def out_word2index(self, index):
-        if self.trg_word2id.has_key(index):
+        if index in self.trg_word2id:
             return self.trg_word2id[index]
         else:
             return UNK_token
@@ -55,7 +55,7 @@ class MultiwozSingleDataset(Dataset):
         input_tensor = []; target_tensor = []; bs_tensor = []; db_tensor = []; mask_tensor = []
         for idx, (usr, sys, bs, db, acts) in enumerate(
                 zip(val_file['usr'], val_file['sys'], val_file['bs'], val_file['db'], val_file['acts'])):
-            tensor = [self.input_word2index(word) for word in usr.strip(' ').split(' ')] + [EOS_token]  # model.input_word2index(word)
+            tensor = [self.input_word2index(word) for word in usr.strip(' ').split(' ')] + [EOS_token]  # models.input_word2index(word)
             input_tensor.append(torch.as_tensor(tensor, dtype=torch.long, device=self.device))  # .view(-1, 1))
 
             tensor = [self.out_word2index(word) for word in sys.strip(' ').split(' ')] + [EOS_token]
@@ -149,5 +149,5 @@ if __name__ == "__main__":
     file_path = '{}/train_dials.json'.format(data_dir)
     train_loader = get_loader(file_path, input_lang_word2index, output_lang_word2index, intent_type, intent2index)
     for data in train_loader:
-        print data
+        print(data)
 

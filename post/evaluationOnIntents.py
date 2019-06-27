@@ -15,8 +15,8 @@ from io import open
 import torch
 
 from utils import util, multiwoz_dataloader
-from model.evaluator import evaluateModel, evaluateModelOnIntent
-from model.model import Model
+from models.evaluator import evaluateModel, evaluateModelOnIntent
+from models.model import Model
 
 def evalulation_on_domain(model_fold_name='bsl'):
     # Generated testset

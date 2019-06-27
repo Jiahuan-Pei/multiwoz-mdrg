@@ -2,7 +2,7 @@ import re
 
 import simplejson as json
 
-from nlp import normalize
+from utils.nlp import normalize
 
 digitpat = re.compile('\d+')
 timepat = re.compile("\d{1,2}[:]\d{1,2}")
