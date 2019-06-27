@@ -11,6 +11,8 @@ import time
 import numpy as np
 import torch
 import random
+import os
+import shutil
 
 # DEFINE special tokens
 SOS_token = 0
@@ -169,7 +171,7 @@ def loadDictionaries(mdir):
 
 # pp added: give a intent_type, return a list of intent names
 def loadIntentDictionaries(intent_type='domain', intent_file='../data/intents.json'):
-    fin = file(intent_file)
+    fin = open(intent_file, 'r')
     intents = json.load(fin) # index 0 is UNK-UNK
     intent_list = []
     if intent_type == 'domain':
@@ -193,5 +195,14 @@ def init_params(model):
         print(name, param.size())
         if param.data.dim() > 1:
             xavier_uniform_(param.data)
+
+# creat a new dir if it do not exist
+def pp_mkdir(path):
+    if os.path.exists(path):
+        shutil.rmtree(path)
+        os.makedirs(path)
+    else:
+        os.makedirs(path)
+
 # pp added -- End
 

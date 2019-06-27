@@ -16,7 +16,7 @@ import torch.nn as nn
 
 from utils import util, multiwoz_dataloader
 from models.model import Model
-from utils.util import detected_device, PAD_token
+from utils.util import detected_device, PAD_token, pp_mkdir
 from models.evaluator import evaluateModel
 # from tqdm import tqdm
 # SOS_token = 0
@@ -152,7 +152,6 @@ def eval_with_train3(model, val_dials, mode='Valid', policy='Greedy'):
         print('{0} Loss:{1:.6f}'.format(mode, valid_loss[ii]))
 
 
-
 def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor=None, name=None):
 
     loss, loss_acts, grad = model.model_train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
@@ -192,6 +191,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
     start = time.time()
     # Valid_Scores, Test_Scores = [], []
     Scores = []
+    val_dials_gens, test_dials_gens = [], []
     for epoch in range(1, n_epochs + 1):
         print('%s\nEpoch=%s (%s %%)' % ('~'*50, epoch, epoch / n_epochs * 100))
         print_loss_total = 0; print_grad_total = 0; print_act_total = 0  # Reset every print_every
@@ -280,18 +280,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         print('Valid Loss: %.6f' % valid_loss)
         # BLEU, MATCHES, SUCCESS, SCORE, TOTAL
         Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
-        # Valid_Scores.append(Valid_Score)
-        if os.path.exists(args.valid_output):
-            shutil.rmtree(args.valid_output)
-            os.makedirs(args.valid_output)
-        else:
-            os.makedirs(args.valid_output)
-        try:
-            with open(args.valid_output + 'val_dials_gen.json', 'w') as outfile:
-                json.dump(val_dials_gen, outfile, indent=4)
-        except:
-            print('json.dump.err.valid')
-
+        val_dials_gens.append(val_dials_gen) # save generated output for each epoch
         # Testing
         # pp added
         model.eval()
@@ -310,18 +299,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
             test_dials_gen[name] = output_words
         # pp added: evaluate valid
         Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
-        # Test_Scores.append(Test_Score)
-        # dumps the decoded output of the testset
-        if os.path.exists(args.decode_output):
-            shutil.rmtree(args.decode_output)
-            os.makedirs(args.decode_output)
-        else:
-            os.makedirs(args.decode_output)
-        try:
-            with open(args.decode_output + 'test_dials_gen.json', 'w') as outfile:
-                json.dump(test_dials_gen, outfile, indent=4)
-        except:
-            print('json.dump.err.test')
+        test_dials_gens.append(test_dials_gen)
 
         model.train()
         # pp added: evaluation - Plan B
@@ -334,6 +312,8 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         model.saveModel(epoch)
         # BLEU, MATCHES, SUCCESS, SCORE, TOTAL
         Scores.append(tuple([epoch]) + Valid_Score + Test_Score) # combine the tuples; 11 elements
+
+    # summary of evaluation metrics
     import pandas as pd
     fields = ['Epoch', 'Valid BLEU', 'Valid Matches', 'Valid Success', 'Valid Score', 'Valid Dialogues',
               'Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Test Dialogues']
@@ -344,6 +324,19 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
     print('Best:', '=' * 60) # selected by valid score
     best_df = sdf.head(1)[['Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Epoch']]
     print(best_df.transpose())
+    # save best prediction to json, evaluated on valid set
+    best_model_id = np.int(best_df['Epoch']) - 1 # epoch start with 1
+    try:
+        with open(args.valid_output + 'val_dials_gen.json', 'w') as outfile:
+            json.dump(val_dials_gens[best_model_id], outfile, indent=4)
+    except:
+        print('json.dump.err.valid')
+    try:
+        with open(args.decode_output + 'test_dials_gen.json', 'w') as outfile:
+            json.dump(test_dials_gens[best_model_id], outfile, indent=4)
+    except:
+        print('json.dump.err.test')
+    return best_df
 
 
 if __name__ == '__main__':
@@ -364,6 +357,10 @@ if __name__ == '__main__':
         test_dials = json.load(outfile)
 
     delex_path = '%s/multi-woz/delex.json' % args.data_dir
+
+    # create dir for generated outputs of valid and test set
+    pp_mkdir(args.valid_output)
+    pp_mkdir(args.decode_output)
 
     model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index, intent2index, index2intent)
     # models = nn.DataParallel(models, device_ids=[0,1]) # latter for parallel

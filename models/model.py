@@ -754,7 +754,7 @@ class Model(nn.Module):
         torch.save(self.decoder.state_dict(), self.model_dir + self.model_name + '-' + str(iter) + '.dec')
 
         with open(self.model_dir + self.model_name + '.config', 'w') as f:
-            f.write(json.dumps(vars(self.args), ensure_ascii=False, indent=4))
+            json.dump(vars(self.args), f, ensure_ascii=False, indent=4)
 
     def loadModel(self, iter=0):
         print('Loading parameters of iter %s ' % iter)

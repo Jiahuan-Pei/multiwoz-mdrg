@@ -510,7 +510,7 @@ def evaluateRealDialogue(dialog, filename):
     return goal, success, match, real_requestables, stats
 
 # use the open source evaluation for nlg-eval https://github.com/Maluuba/nlg-eval
-def evaluteNLG(gen_dials, ref_dialogues):
+def evaluateNLG(gen_dials, ref_dialogues):
     hyp_list, ref_list = [], []
     for fname in gen_dials:
         hyp_list.extend(gen_dials[fname]) # list of sentence string
@@ -523,7 +523,7 @@ def evaluteNLG(gen_dials, ref_dialogues):
     print(metrics_dict)
     return metrics_dict
 
-def evaluteNLGFile(gen_dials_fpath, ref_dialogues_fpath):
+def evaluateNLGFile(gen_dials_fpath, ref_dialogues_fpath):
     with open(gen_dials_fpath, 'r') as gen, open(ref_dialogues_fpath, 'r') as ref:
         gen_dials = json.load(gen)
         ref_dialogues = json.load(ref)
@@ -540,7 +540,7 @@ def evaluteNLGFile(gen_dials_fpath, ref_dialogues_fpath):
     print(metrics_dict)
     return metrics_dict
 
-def evaluteNLGFiles(gen_dials_fpaths, ref_dialogues_fpath):
+def evaluateNLGFiles(gen_dials_fpaths, ref_dialogues_fpath):
     from nlgeval import NLGEval
     nlgeval = NLGEval()  # loads the models
 

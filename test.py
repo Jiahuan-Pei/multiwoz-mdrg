@@ -12,9 +12,9 @@ import numpy as np
 import torch
 
 from utils import util, multiwoz_dataloader
-from models.evaluator import evaluateModel, evaluteNLG, evaluteNLGFile, evaluteNLGFiles
+from models.evaluator import evaluateModel, evaluateNLG, evaluateNLGFile, evaluateNLGFiles
 from models.model import Model
-from utils.util import detected_device
+from utils.util import detected_device, pp_mkdir
 
 # pp added: print out env
 util.get_env_info()
@@ -77,19 +77,6 @@ def loadModelAndData(num):
     if args.load_param:
         model.loadModel(iter=num)
 
-    # Load data
-    if os.path.exists(args.decode_output):
-        shutil.rmtree(args.decode_output)
-        os.makedirs(args.decode_output)
-    else:
-        os.makedirs(args.decode_output)
-
-    if os.path.exists(args.valid_output):
-        shutil.rmtree(args.valid_output)
-        os.makedirs(args.valid_output)
-    else:
-        os.makedirs(args.valid_output)
-
     # # Load validation file list:
     with open('{}/val_dials.json'.format(args.data_dir)) as outfile:
         val_dials = json.load(outfile)
@@ -101,85 +88,70 @@ def loadModelAndData(num):
     return model, val_dials, test_dials, input_lang_word2index, output_lang_word2index, intent2index, index2intent
 
 
-def decode(num=1):
+def decode(num=1, beam_search=False):
 
     model, val_dials, test_dials, input_lang_word2index, output_lang_word2index, intent2index, index2intent  = loadModelAndData(num)
 
     delex_path = '%s/multi-woz/delex.json' % args.data_dir
 
     start_time = time.time()
-    for ii in range(2):
-        if ii == 0:
-            # continue  # added for debug; ignore greedy search part
-            print(50 * '-' + 'GREEDY')
-            model.beam_search = False
-        else:
-            print(50 * '-' + 'BEAM')
-            model.beam_search = True
+    model.beam_search = beam_search
 
-        step = 0 if not args.debug else 2 # small sample for debug
+    step = 0 if not args.debug else 2 # small sample for debug
 
-        # VALIDATION
-        val_dials_gen = {}
-        valid_loss = 0
-        for name, val_file in list(val_dials.items())[-step:]:
-            loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
-                                                              input_lang_word2index, output_lang_word2index,
-                                                              args.intent_type, intent2index)
-            data = iter(loader).next()
-            # Transfer to GPU
-            if torch.cuda.is_available():
-                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
-            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+    # VALIDATION
+    val_dials_gen = {}
+    valid_loss = 0
+    for name, val_file in list(val_dials.items())[-step:]:
+        loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
+                                                          input_lang_word2index, output_lang_word2index,
+                                                          args.intent_type, intent2index)
+        data = iter(loader).next()
+        # Transfer to GPU
+        if torch.cuda.is_available():
+            data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+        input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
 
-            output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
-                                                        db_tensor, bs_tensor, mask_tensor)
+        output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
+                                                    db_tensor, bs_tensor, mask_tensor)
 
-            valid_loss += loss_sentence
-            val_dials_gen[name] = output_words
+        valid_loss += loss_sentence
+        val_dials_gen[name] = output_words
 
-        print('Current VALID LOSS:', valid_loss)
-        try:
-            with open(args.valid_output + 'val_dials_gen.json', 'w') as outfile:
-                json.dump(val_dials_gen, outfile, indent=4)
-        except:
-            print('json.dump.err.valid')
+    print('Current VALID LOSS:', valid_loss)
 
-        evaluateModel(val_dials_gen, val_dials, delex_path, mode='valid')
-        # evaluteNLG(val_dials_gen, val_dials)
+    Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='valid')
+    # evaluteNLG(val_dials_gen, val_dials)
 
-        # TESTING
-        test_dials_gen = {}
-        test_loss = 0
-        for name, test_file in list(test_dials.items())[-step:]:
-            loader = multiwoz_dataloader.get_loader_by_dialogue(test_file, name,
-                                                              input_lang_word2index, output_lang_word2index,
-                                                              args.intent_type, intent2index)
-            data = iter(loader).next()
-            # Transfer to GPU
-            if torch.cuda.is_available():
-                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
-            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
-            output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
-                                                        db_tensor, bs_tensor, mask_tensor)
-            test_loss += loss_sentence
-            test_dials_gen[name] = output_words
+    # TESTING
+    test_dials_gen = {}
+    test_loss = 0
+    for name, test_file in list(test_dials.items())[-step:]:
+        loader = multiwoz_dataloader.get_loader_by_dialogue(test_file, name,
+                                                          input_lang_word2index, output_lang_word2index,
+                                                          args.intent_type, intent2index)
+        data = iter(loader).next()
+        # Transfer to GPU
+        if torch.cuda.is_available():
+            data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+        input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+        output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
+                                                    db_tensor, bs_tensor, mask_tensor)
+        test_loss += loss_sentence
+        test_dials_gen[name] = output_words
 
-        test_loss /= len(test_dials)
+    test_loss /= len(test_dials)
 
-        print('Current TEST LOSS:', test_loss)
-        try:
-            with open(args.decode_output + 'test_dials_gen.json', 'w') as outfile:
-                json.dump(test_dials_gen, outfile, indent=4)
-        except:
-            print('json.dump.err.test')
-        evaluateModel(test_dials_gen, test_dials, delex_path, mode='test')
-        # evaluteNLG(test_dials_gen, test_dials)
+    print('Current TEST LOSS:', test_loss)
+
+    Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='test')
+    # evaluteNLG(test_dials_gen, test_dials)
 
     print('TIME:', time.time() - start_time)
+    return Valid_Score, val_dials_gen, Test_Score, test_dials_gen
 
 
-def decodeWrapper():
+def decodeWrapper(beam_search=False):
     # Load config file
     # with open(args.model_path + '.config') as f:
     with open('{}{}.config'.format(args.model_dir, args.model_name)) as f:
@@ -196,20 +168,57 @@ def decodeWrapper():
 
     # Start going through models
     # args.original = args.model_path
+    Best_Valid_Score = None
+    Best_Test_Score = None
+    Best_model_id = 0
+    Best_val_dials_gen = {}
+    Best_test_dials_gen = {}
     for ii in range(1, args.no_models + 1):
-        print(70 * '-' + 'EVALUATING EPOCH %s' % ii)
+        print(30 * '-' + 'EVALUATING EPOCH %s' % ii)
         # args.model_path = args.model_path + '-' + str(ii)
         with torch.no_grad():
-            decode(ii)
+            Valid_Score, val_dials_gen, Test_Score, test_dials_gen = decode(ii, beam_search)
+            if Best_Valid_Score is None or Best_Valid_Score[-2] < Valid_Score[-2]:
+                Best_Valid_Score = Valid_Score
+                Best_Test_Score = Test_Score
+                Best_val_dials_gen = val_dials_gen
+                Best_test_dials_gen = test_dials_gen
+                Best_model_id = ii
         # try:
         #     decode(ii, intent2index)
         # except:
         #     print('cannot decode')
 
-        #
+    # save best generated output to json
+    print('Summary'+'~'*50)
+    print('Best model: %s'%(Best_model_id))
+    BLEU, MATCHES, SUCCESS, SCORE, total = Best_Test_Score
+    mode = 'Test'
+    print('%s BLEU: %.4f' % (mode, BLEU))
+    print('%s Matches: %2.2f%%' % (mode, MATCHES))
+    print('%s Success: %2.2f%%' % (mode, SUCCESS))
+    print('%s Score: %.4f' % (mode, SCORE))
+    print('%s Dialogues: %s' % (mode, total))
+    suffix = 'bm' if beam_search else 'gd'
+    try:
+        with open(args.valid_output + 'val_dials_gen_%s.json' % suffix, 'w') as outfile:
+            json.dump(Best_val_dials_gen, outfile, indent=4)
+    except:
+        print('json.dump.err.valid')
+    try:
+        with open(args.decode_output + 'test_dials_gen_%s.json' % suffix, 'w') as outfile:
+            json.dump(Best_test_dials_gen, outfile, indent=4)
+    except:
+        print('json.dump.err.test')
 
 if __name__ == '__main__':
-    decodeWrapper()
+    # create dir for generated outputs of valid and test set
+    pp_mkdir(args.valid_output)
+    pp_mkdir(args.decode_output)
+    print('\n\nGreedy Search'+'='*50)
+    decodeWrapper(beam_search=False)
+    print('\n\nBeam Search' + '=' * 50)
+    decodeWrapper(beam_search=True)
     # evaluteNLGFile(gen_dials_fpath='results/bsl_20190510161309/data/test_dials/test_dials_gen.json',
     #                 ref_dialogues_fpath='data/test_dials.json')
     # evaluteNLGFiles(gen_dials_fpaths=['results/bsl_20190510161309/data/test_dials/test_dials_gen.json',
