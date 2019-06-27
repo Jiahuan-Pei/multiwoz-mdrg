@@ -24,6 +24,13 @@ To download and pre-process the data run:
 
 ```python create_delex_data.py```
 
+## For debugging
+To debug train.py, you can add the following parameteres to save time
+--debug=True --emb_size=5 --hid_size_dec=5 --hid_size_enc=5 --hid_size_pol=5 --max_epochs=2
+
+To debug test.py, the parameters are:
+--debug=True --no_models=2 --beam_width=2
+
 ## Training
 To train the model run:
 
