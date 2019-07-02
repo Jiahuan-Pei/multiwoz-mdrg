@@ -25,10 +25,12 @@ diag={}
 #
 # print(evaluator.evaluate_match_success(diag))
 # print(evaluator.evaluate_bleu_prf(diag))
-path_bsl = 'results/bsl_20190510161309/data/test_dials/test_dials_gen.json'
-path_moe = 'results/moe1_20190510165545/data/test_dials/test_dials_gen.json'
+path_bsl = 'results/test_dials_gen(bsl_m2_20190510161318).json'
+path_moe = 'results/test_dials_gen(moe1_20190510165545).json'
+with open(path_bsl) as fr:
+    print(path_bsl)
+    evaluator.summarize_report(json.load(fr))
+
 with open(path_moe) as fr:
-    test_dials = json.load(fr)
-    # print(evaluator.evaluate_match_success(test_dials))
-    # print(evaluator.evaluate_bleu_prf(test_dials))
-    evaluator.summarize_report(test_dials)
+    print(path_moe)
+    evaluator.summarize_report(json.load(fr))

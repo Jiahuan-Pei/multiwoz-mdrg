@@ -217,6 +217,17 @@ def analyze_dialogue(dialogue, maxlen):
     d_pp['usr_log'] = usr_turns
     d_pp['sys_log'] = sys_turns
 
+    # pp added
+    sys_acts = []
+    for i in range(1, len(d['acts'])+1):
+        a = d['acts']['%s'%i]
+        if a == 'No Annotation':
+            sys_acts.append(['UNK-UNK'])
+        else:
+            sys_acts.append(a.keys())
+    d_pp['sys_acts'] = sys_acts
+    # pp added
+
     return d_pp
 
 
@@ -230,9 +241,12 @@ def get_dial(dialogue):
     db = [t['db_pointer'] for t in d_orig['usr_log']]
     bs = [t['belief_summary'] for t in d_orig['sys_log']]
     sys = [t['text'] for t in d_orig['sys_log']]
-    for u, d, s, b in zip(usr, db, sys, bs):
-        dial.append((u, s, d, b))
-
+    # for u, d, s, b in zip(usr, db, sys, bs):
+    #     dial.append((u, s, d, b))
+    # pp added
+    acts = d_orig['sys_acts']
+    for u, d, s, b, a in zip(usr, db, sys, bs, acts): # pp added
+        dial.append((u, s, d, b, a))
     return dial
 
 
@@ -296,6 +310,21 @@ def createDelexData():
     fin2 = open('data/multi-woz/dialogue_acts.json')
     data2 = json.load(fin2)
 
+    # pp added: our definition of intent, which consists of [domain]-[act_type]
+    intent_set = []
+    for dname in data2:
+        for sys_turn in data2[dname]:
+            try:
+                keys = list(data2[dname][sys_turn].keys())
+                intent_set.extend(keys)
+            except:
+                pass
+                # "No Annotation"
+                # print data2[dname][sys_turn]
+    intent_set = ['UNK-UNK'] + sorted(list(set(intent_set)))
+    with open('data/intents.json', 'w') as outfile:
+        json.dump(intent_set, outfile, indent=4)
+
     def get_domain(dialogue):
         domains=dict()
         for d in dialogue['goal']:
@@ -307,6 +336,12 @@ def createDelexData():
         dialogue = data[dialogue_name]
         #print dialogue_name
         domains=get_domain(dialogue)
+
+        # pp added
+        try:
+            dialogue[u'acts'] = data2[dialogue_name.strip('.json')]
+        except:
+            print(dialogue_name)
 
         idx_acts = 1
 
@@ -372,9 +407,12 @@ def divideData(data):
     # dictionaries
     word_freqs_usr = OrderedDict()
     word_freqs_sys = OrderedDict()
-    
+    count = 0
     for dialogue_name in tqdm(data):
         #print dialogue_name
+        count +=1
+        if count >5:
+            break
         dial = get_dial(data[dialogue_name])
         if dial:
             dialogue = {}
@@ -382,11 +420,13 @@ def divideData(data):
             dialogue['sys'] = []
             dialogue['db'] = []
             dialogue['bs'] = []
+            dialogue['acts'] = []  # pp added
             for turn in dial:
                 dialogue['usr'].append(turn[0])
                 dialogue['sys'].append(turn[1])
                 dialogue['db'].append(turn[2])
                 dialogue['bs'].append(turn[3])
+                dialogue['acts'].append(list(turn[4]))  # pp added
 
             if dialogue_name in testListFile:
                 test_dials[dialogue_name] = dialogue
@@ -454,8 +494,9 @@ def buildDictionaries(word_freqs_usr, word_freqs_sys):
 def main():
     print('Create delexicalized dialogues. Get yourself a coffee, this might take a while.')
     delex_data = createDelexData()
-    # delex_data=json.load(open('data/multi-woz/delex.json'))
-    print('Divide dialogues for separate bits - usr, sys, db, bs')
+    # delex_data=json.load(open('data/multi-woz/delex.json')) # used for debug to save tiem
+    # print('Divide dialogues for separate bits - usr, sys, db, bs')
+    print('Divide dialogues for separate bits - usr, sys, db, bs, acts')
     word_freqs_usr, word_freqs_sys = divideData(delex_data)
     print('Building dictionaries')
     buildDictionaries(word_freqs_usr, word_freqs_sys)
