@@ -141,7 +141,7 @@ def get_loader_by_full_dialogue(file_path, src_word2id, trg_word2id, intent_type
     return data_loader_list
 
 if __name__ == "__main__":
-    data_dir = '../multiwoz-moe/data'
+    data_dir = '../multiwoz1-moe/data'
     # intent_type = 'domain'
     intent_type = None
     input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = loadDictionaries(mdir=data_dir)

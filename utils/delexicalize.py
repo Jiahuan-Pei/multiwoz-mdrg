@@ -25,66 +25,70 @@ def prepareSlotValuesIndependent():
     dic_food = []
     dic_price = []
 
+    mdit = {}
     # read databases
     for domain in domains:
-        try:
-            fin = file('db/' + domain + '_db.json')
-            db_json = json.load(fin)
-            fin.close()
-
-            for ent in db_json:
-                for key, val in ent.items():
-                    if val == '?' or val == 'free':
-                        pass
-                    elif key == 'address':
+        # try:
+        fin = open('db/' + domain + '_db.json')
+        db_json = json.load(fin)
+        fin.close()
+        for ent in db_json:
+            for key, val in ent.items():
+                if val == '?' or val == 'free':
+                    pass
+                elif key == 'address':
+                    dic.append((normalize(val), '[' + domain + '_' + 'address' + ']'))
+                    if "road" in val:
+                        val = val.replace("road", "rd")
                         dic.append((normalize(val), '[' + domain + '_' + 'address' + ']'))
-                        if "road" in val:
-                            val = val.replace("road", "rd")
-                            dic.append((normalize(val), '[' + domain + '_' + 'address' + ']'))
-                        elif "rd" in val:
-                            val = val.replace("rd", "road")
-                            dic.append((normalize(val), '[' + domain + '_' + 'address' + ']'))
-                        elif "st" in val:
-                            val = val.replace("st", "street")
-                            dic.append((normalize(val), '[' + domain + '_' + 'address' + ']'))
-                        elif "street" in val:
-                            val = val.replace("street", "st")
-                            dic.append((normalize(val), '[' + domain + '_' + 'address' + ']'))
-                    elif key == 'name':
+                    elif "rd" in val:
+                        val = val.replace("rd", "road")
+                        dic.append((normalize(val), '[' + domain + '_' + 'address' + ']'))
+                    elif "st" in val:
+                        val = val.replace("st", "street")
+                        dic.append((normalize(val), '[' + domain + '_' + 'address' + ']'))
+                    elif "street" in val:
+                        val = val.replace("street", "st")
+                        dic.append((normalize(val), '[' + domain + '_' + 'address' + ']'))
+                elif key == 'name':
+                    dic.append((normalize(val), '[' + domain + '_' + 'name' + ']'))
+                    if "b & b" in val:
+                        val = val.replace("b & b", "bed and breakfast")
                         dic.append((normalize(val), '[' + domain + '_' + 'name' + ']'))
-                        if "b & b" in val:
-                            val = val.replace("b & b", "bed and breakfast")
-                            dic.append((normalize(val), '[' + domain + '_' + 'name' + ']'))
-                        elif "bed and breakfast" in val:
-                            val = val.replace("bed and breakfast", "b & b")
-                            dic.append((normalize(val), '[' + domain + '_' + 'name' + ']'))
-                        elif "hotel" in val and 'gonville' not in val:
-                            val = val.replace("hotel", "")
-                            dic.append((normalize(val), '[' + domain + '_' + 'name' + ']'))
-                        elif "restaurant" in val:
-                            val = val.replace("restaurant", "")
-                            dic.append((normalize(val), '[' + domain + '_' + 'name' + ']'))
-                    elif key == 'postcode':
-                        dic.append((normalize(val), '[' + domain + '_' + 'postcode' + ']'))
-                    elif key == 'phone':
-                        dic.append((val, '[' + domain + '_' + 'phone' + ']'))
-                    elif key == 'trainID':
-                        dic.append((normalize(val), '[' + domain + '_' + 'id' + ']'))
-                    elif key == 'department':
-                        dic.append((normalize(val), '[' + domain + '_' + 'department' + ']'))
+                    elif "bed and breakfast" in val:
+                        val = val.replace("bed and breakfast", "b & b")
+                        dic.append((normalize(val), '[' + domain + '_' + 'name' + ']'))
+                    elif "hotel" in val and 'gonville' not in val:
+                        val = val.replace("hotel", "")
+                        dic.append((normalize(val), '[' + domain + '_' + 'name' + ']'))
+                    elif "restaurant" in val:
+                        val = val.replace("restaurant", "")
+                        dic.append((normalize(val), '[' + domain + '_' + 'name' + ']'))
+                elif key == 'postcode':
+                    dic.append((normalize(val), '[' + domain + '_' + 'postcode' + ']'))
+                elif key == 'phone':
+                    dic.append((val, '[' + domain + '_' + 'phone' + ']'))
+                elif key == 'trainID':
+                    dic.append((normalize(val), '[' + domain + '_' + 'id' + ']'))
+                elif key == 'department':
+                    dic.append((normalize(val), '[' + domain + '_' + 'department' + ']'))
 
-                    # NORMAL DELEX
-                    elif key == 'area':
-                        dic_area.append((normalize(val), '[' + 'value' + '_' + 'area' + ']'))
-                    elif key == 'food':
-                        dic_food.append((normalize(val), '[' + 'value' + '_' + 'food' + ']'))
-                    elif key == 'pricerange':
-                        dic_price.append((normalize(val), '[' + 'value' + '_' + 'pricerange' + ']'))
-                    else:
-                        pass
-                    # TODO car type?
-        except:
-            pass
+                # NORMAL DELEX
+                elif key == 'area':
+                    dic_area.append((normalize(val), '[' + 'value' + '_' + 'area' + ']'))
+                elif key == 'food':
+                    dic_food.append((normalize(val), '[' + 'value' + '_' + 'food' + ']'))
+                elif key == 'pricerange':
+                    dic_price.append((normalize(val), '[' + 'value' + '_' + 'pricerange' + ']'))
+                else:
+                    pass
+                # TODO car type?
+                if normalize(val) in mdit and domain!=mdit[normalize(val)] and key not in ['area', 'food', 'pricerange', 'id'] and 'value' not in normalize(val):
+                    print(key, '\\', normalize(val), '\\', mdit[normalize(val)], '\\', domain) # multiple domain disambiguation
+                else:
+                    mdit[normalize(val)] = domain
+        # except:
+    #     pass
 
         if domain == 'hospital':
             dic.append((normalize('Hills Rd'), '[' + domain + '_' + 'address' + ']'))
@@ -103,7 +107,7 @@ def prepareSlotValuesIndependent():
             dic.append((normalize('Parkside Police Station'), '[' + domain + '_' + 'name' + ']'))
 
     # add at the end places from trains
-    fin = file('db/' + 'train' + '_db.json')
+    fin = open('db/' + 'train' + '_db.json')
     db_json = json.load(fin)
     fin.close()
 

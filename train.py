@@ -17,7 +17,7 @@ import torch.nn as nn
 from utils import util, multiwoz_dataloader
 from models.model import Model
 from utils.util import detected_device, PAD_token, pp_mkdir
-from models.evaluator import evaluateModel
+from multiwoz.Evaluators import *
 # from tqdm import tqdm
 # SOS_token = 0
 # EOS_token = 1
@@ -27,7 +27,7 @@ from models.evaluator import evaluateModel
 # pp added: print out env
 util.get_env_info()
 
-parser = argparse.ArgumentParser(description='multiwoz-bsl-tr')
+parser = argparse.ArgumentParser(description='multiwoz1-bsl-tr')
 # Group args
 # 1. Data & Dirs
 data_arg = parser.add_argument_group(title='Data')
@@ -111,46 +111,6 @@ print('args.intent_type={}'.format(args.intent_type))
 # pp added: init seed
 print(args)
 util.init_seed(args.seed)
-
-def eval_with_train3(model, val_dials, mode='Valid', policy='Greedy'):
-    val_dials_gen = {0:{}, 1:{}}
-    valid_loss = {0:0, 1:0}
-    policy_idx_list = range(2) # both
-    if policy == 'Greedy':
-        policy_idx_list = [0]
-    elif policy == 'Beam':
-        policy_idx_list = [1]
-
-    for name, val_file in val_dials.items():
-        loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
-                                                          input_lang_word2index, output_lang_word2index,
-                                                          args.intent_type, intent2index)
-        data = iter(loader).next()
-        # Transfer to GPU
-        if torch.cuda.is_available():
-            data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
-        input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
-
-        for ii in policy_idx_list:
-            if ii == 0:
-                model.beam_search = False
-            else:
-                model.beam_search = True
-            output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
-                                                        db_tensor, bs_tensor, mask_tensor)
-
-            valid_loss[ii] += loss_sentence
-            val_dials_gen[ii][name] = output_words
-
-    for ii in policy_idx_list:
-        if ii == 0:
-            model.beam_search = False
-        else:
-            model.beam_search = True
-        BLEU, MATCHES, SUCCESS, SCORE, total = evaluateModel(val_dials_gen[ii], val_dials, delex_path, mode)
-        print(50 * '-' + policy)
-        print('{0} Loss:{1:.6f}'.format(mode, valid_loss[ii]))
-
 
 def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor=None, name=None):
 
@@ -279,7 +239,8 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         # pp added: evaluate valid
         print('Valid Loss: %.6f' % valid_loss)
         # BLEU, MATCHES, SUCCESS, SCORE, TOTAL
-        Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
+        Valid_Score = evaluator.evaluate_match_success(val_dials_gen, mode='Valid')
+        # Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
         val_dials_gens.append(val_dials_gen) # save generated output for each epoch
         # Testing
         # pp added
@@ -298,7 +259,8 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
                                                         db_tensor, bs_tensor, mask_tensor)
             test_dials_gen[name] = output_words
         # pp added: evaluate valid
-        Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
+        Test_Score = evaluator.evaluate_match_success(test_dials_gen, mode='Test')
+        # Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
         test_dials_gens.append(test_dials_gen)
 
         model.train()
@@ -368,5 +330,6 @@ if __name__ == '__main__':
     if args.load_param:
         model.loadModel(args.epoch_load)
 
+    evaluator = MultiWozEvaluator('MultiWozEvaluator')
 
     trainIters(model, intent2index, n_epochs=args.max_epochs, args=args)

@@ -5,7 +5,7 @@
       <paths name="JPeiSlurmH0">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/jpei/multiwoz-without-changes" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/jpei/multiwoz-mdrg" local="$PROJECT_DIR$" web="/" />
           </mappings>
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/../multiwoz/results" />
@@ -15,7 +15,7 @@
       <paths name="JPeiSlurmH1">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/jpei/multiwoz-without-changes" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/jpei/multiwoz-mdrg" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

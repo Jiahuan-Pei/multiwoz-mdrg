@@ -36,7 +36,7 @@ def evalulation_on_domain(model_fold_name='bsl'):
 if __name__ == "__main__":
     intent_type = 'domain'
     result_dir = 'results'
-    data_dir = '../multiwoz-moe/data'
+    data_dir = '../multiwoz1-moe/data'
     delex_path = '%s/multi-woz/delex.json' % data_dir
 
     # Golden testset

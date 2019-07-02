@@ -1,6 +1,7 @@
 import random
 import sys
 sys.path.append('..')
+random.seed(111)
 
 from utils.dbPointer import queryResultVenues
 from utils.delexicalize import *
@@ -37,7 +38,7 @@ def parseGoal(goal, d, domain):
 
     return goal
 
-
+# dialouges is a dict of list, each list consists of generated responses
 def evaluateModel(dialogues, val_dials, delex_path, mode='Valid'):
     """Gathers statistics for the whole sets."""
     try:
@@ -57,7 +58,7 @@ def evaluateModel(dialogues, val_dials, delex_path, mode='Valid'):
     for filename, dial in dialogues.items():
         data = delex_dialogues[filename]
 
-        goal, _, _, requestables, _ = evaluateRealDialogue(data, filename)
+        goal, _, _, requestables, _ = evaluateRealDialogue(data, filename) # ground truth
 
         success, match, stats = evaluateGeneratedDialogue(dial, goal, data, requestables)
 
@@ -207,7 +208,7 @@ def evaluateModelOnIntent(dialogues, val_dials, delex_path, intent, mode='Valid'
         print('%s Success: %2.2f%%' % (mode, SUCCESS))
         print('%s Score: %.4f' % (mode, SCORE))
         print('%s Dialogues: %s' % (mode, total_dials))
-        print('%s Evaluated Turns: %s' % (mode, total_turns))
+        print('%s Turns: %s' % (mode, total_turns))
         return BLEU, MATCHES, SUCCESS, SCORE, total
     except:
         print('SCORE ERROR')
@@ -508,6 +509,16 @@ def evaluateRealDialogue(dialog, filename):
             success = 0
 
     return goal, success, match, real_requestables, stats
+
+def evaluateModelGivenFile(gen_path, ref_path):
+    with open(ref_path, 'r') as ref, open(gen_path, 'r') as gen:
+        ref_dialogues = json.load(ref)
+        gen_dialogues = {}
+        for k, v in json.load(gen).items():
+            gen_dialogues[k] = v['sys']
+    delex_path = 'data/multi-woz/delex.json'
+    evaluateModel(gen_dialogues, ref_dialogues, delex_path, mode='Test')
+    return
 
 # use the open source evaluation for nlg-eval https://github.com/Maluuba/nlg-eval
 def evaluateNLG(gen_dials, ref_dialogues):

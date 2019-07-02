@@ -12,14 +12,14 @@ import numpy as np
 import torch
 
 from utils import util, multiwoz_dataloader
-from models.evaluator import evaluateModel, evaluateNLG, evaluateNLGFile, evaluateNLGFiles
+from models.evaluator import *
 from models.model import Model
 from utils.util import detected_device, pp_mkdir
 
 # pp added: print out env
 util.get_env_info()
 
-parser = argparse.ArgumentParser(description='multiwoz-bsl-te')
+parser = argparse.ArgumentParser(description='multiwoz1-bsl-te')
 # 1. Data & Dir
 data_arg = parser.add_argument_group('Data')
 data_arg.add_argument('--data_dir', type=str, default='data', help='the root directory of data')
@@ -51,6 +51,7 @@ print('args.device={}'.format(args.device))
 
 # torch.manual_seed(args.seed)
 util.init_seed(args.seed)
+print(args)
 
 def load_config(args):
     config = util.unicode_to_utf8(
@@ -227,3 +228,4 @@ if __name__ == '__main__':
     # from nlgeval import compute_metrics
     # metrics_dict = compute_metrics(hypothesis='/Users/pp/Code/nlg-eval/examples/hyp.txt',
     #                                references=['/Users/pp/Code/nlg-eval/examples/ref1.txt'])
+

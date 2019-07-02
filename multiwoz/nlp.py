@@ -7,7 +7,8 @@ from nltk.util import ngrams
 timepat = re.compile("\d{1,2}[:]\d{1,2}")
 pricepat = re.compile("\d{1,3}[.]\d{1,2}")
 
-fin = open('utils/mapping.pair', 'r')
+
+fin = open('multiwoz/mapping.pair')
 replacements = []
 for line in fin.readlines():
     tok_from, tok_to = line.replace('\n', '').split('\t')
@@ -34,10 +35,6 @@ def insertSpace(token, text):
 
 
 def normalize(text):
-    # pp added
-    if type(text) is not str:
-        text = str(text)
-
     # lower case every word
     text = text.lower()
 
