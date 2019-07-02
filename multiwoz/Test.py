@@ -20,11 +20,10 @@ diag={}
 # print(evaluator.evaluate_match_success(evaluator.delex_dialogues, mode='rollout'))
 # random.seed(1)
 
-# for filename, dialogues in json.load(open('data/test_dials.json')).items():
-#     diag[filename] = dialogues['sys']
-#
-# print(evaluator.evaluate_match_success(diag))
-# print(evaluator.evaluate_bleu_prf(diag))
+for filename, dialogues in json.load(open('data/multi-woz/test_dials.json')).items():
+    diag[filename] = dialogues['sys']
+evaluator.summarize_report(diag)
+
 path_bsl = 'results/test_dials_gen(bsl_m2_20190510161318).json'
 path_moe = 'results/test_dials_gen(moe1_20190510165545).json'
 with open(path_bsl) as fr:
