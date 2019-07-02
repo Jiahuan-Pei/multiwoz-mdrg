@@ -266,7 +266,7 @@ def createDict(word_freqs):
         worddict[ww] = ii
 
     for ii, item in enumerate(sorted_words):
-        if len(worddict)>DICT_SIZE:
+        if len(worddict)>=DICT_SIZE:
             break
         worddict[item[0]] = ii + len(extra_tokens)
     # print(worddict)

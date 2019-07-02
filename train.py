@@ -49,7 +49,7 @@ net_arg.add_argument('--hid_size_enc', type=int, default=150)
 net_arg.add_argument('--hid_size_dec', type=int, default=150)
 net_arg.add_argument('--hid_size_pol', type=int, default=150)
 net_arg.add_argument('--max_len', type=int, default=50)
-net_arg.add_argument('--vocab_size', type=int, default=400, metavar='V')
+net_arg.add_argument('--vocab_size', type=int, default=401, metavar='V')
 net_arg.add_argument('--use_attn', type=util.str2bool, nargs='?', const=True, default=True) # F
 net_arg.add_argument('--use_emb',  type=util.str2bool, nargs='?', const=True, default=False)
 
