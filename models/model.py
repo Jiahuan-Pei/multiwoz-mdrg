@@ -97,6 +97,7 @@ class EncoderRNN(nn.Module):
             self.bidirectional = True
         padding_idx = 3
         self.embedding = nn.Embedding(input_size, embedding_size, padding_idx=padding_idx)
+        # self.embedding = nn.Embedding(400, embedding_size, padding_idx=padding_idx)
         self.rnn = whatCellType(embedding_size, hidden_size,
                     cell_type, dropout_rate=self.dropout)
         self.device = device

@@ -254,19 +254,22 @@ def createDict(word_freqs):
     sorted_words=sorted(word_freqs.items(), key=lambda x: x[1], reverse=True)
 
     # # Extra vocabulary symbols
-    # _GO = '_GO'
-    # EOS = '_EOS'
-    # UNK = '_UNK'
-    # PAD = '_PAD'
-    # extra_tokens = [_GO, EOS, UNK, PAD]
+    _GO = '_GO'
+    EOS = '_EOS'
+    UNK = '_UNK'
+    PAD = '_PAD'
+    extra_tokens = [_GO, EOS, UNK, PAD]
 
     worddict = OrderedDict()
 
-    for item in sorted_words:
+    for ii, ww in enumerate(extra_tokens):
+        worddict[ww] = ii
+
+    for ii, item in enumerate(sorted_words):
         if len(worddict)>DICT_SIZE:
             break
-        worddict[item[0]] = item[1]
-
+        worddict[item[0]] = ii + len(extra_tokens)
+    # print(worddict)
     return worddict
 
 def loadData():
@@ -499,8 +502,8 @@ def buildDictionaries(word_freqs_usr, word_freqs_sys):
 
 def main():
     print('Create delexicalized dialogues. Get yourself a coffee, this might take a while.')
-    delex_data = createDelexData()
-    # delex_data=json.load(open('%s/delex.json' % data_dir)) # used for debug to save tiem
+    # delex_data = createDelexData()
+    delex_data=json.load(open('%s/delex.json' % data_dir)) # used for debug to save tiem
     # print('Divide dialogues for separate bits - usr, sys, db, bs')
     print('Divide dialogues for separate bits - usr, sys, db, bs, acts')
     word_freqs_usr, word_freqs_sys = divideData(delex_data)

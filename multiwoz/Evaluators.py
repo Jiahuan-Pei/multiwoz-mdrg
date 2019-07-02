@@ -769,6 +769,8 @@ class MultiWozEvaluator(BaseEvaluator):
         SUCCESS, MATCHES = self.evaluate_match_success(dialogues, mode)
         BLEU, P, R, F1 = self.evaluate_bleu_prf(dialogues)
         SCORE = 0.5 * MATCHES + 0.5 * SUCCESS + BLEU
+        NUM_DIALS = len(dialogues)
+        NUM_TURNS = sum([len(e) for e in dialogues])
 
         print('%s BLEU: %.4f' % (mode, BLEU))
         print('%s Matches: %2.2f%%' % (mode, MATCHES))
@@ -777,7 +779,7 @@ class MultiWozEvaluator(BaseEvaluator):
         print('%s Precision: %.2f%%' % (mode, P))
         print('%s Recall: %.2f%%' % (mode, R))
         print('%s F1: %.2f%%' % (mode, F1))
-        print('%s Dialogues: %s' % (mode, len(dialogues)))
-        print('%s Turns: %s' % (mode, sum([len(e) for e in dialogues])))
+        print('%s Dialogues: %s' % (mode, NUM_DIALS))
+        print('%s Turns: %s' % (mode, NUM_TURNS))
         return BLEU, MATCHES, SUCCESS, SCORE, P, R, F1
 

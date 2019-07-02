@@ -8,7 +8,7 @@ timepat = re.compile("\d{1,2}[:]\d{1,2}")
 pricepat = re.compile("\d{1,3}[.]\d{1,2}")
 
 
-fin = open('data/mapping.pair')
+fin = open('data/multi-woz/mapping.pair')
 replacements = []
 for line in fin.readlines():
     tok_from, tok_to = line.replace('\n', '').split('\t')

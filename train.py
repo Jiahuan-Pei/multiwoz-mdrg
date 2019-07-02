@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(description='multiwoz1-bsl-tr')
 # Group args
 # 1. Data & Dirs
 data_arg = parser.add_argument_group(title='Data')
-data_arg.add_argument('--data_dir', type=str, default='data', help='the root directory of data')
+data_arg.add_argument('--data_dir', type=str, default='data/multi-woz', help='the root directory of data')
 data_arg.add_argument('--log_dir', type=str, default='logs')
 data_arg.add_argument('--model_dir', type=str, default='results/bsl/models/')
 data_arg.add_argument('--model_name', type=str, default='translate.ckpt')
@@ -239,7 +239,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         # pp added: evaluate valid
         print('Valid Loss: %.6f' % valid_loss)
         # BLEU, MATCHES, SUCCESS, SCORE, TOTAL
-        Valid_Score = evaluator.evaluate_match_success(val_dials_gen, mode='Valid')
+        Valid_Score = evaluator.summarize_report(val_dials_gen, mode='Valid')
         # Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
         val_dials_gens.append(val_dials_gen) # save generated output for each epoch
         # Testing
@@ -259,7 +259,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
                                                         db_tensor, bs_tensor, mask_tensor)
             test_dials_gen[name] = output_words
         # pp added: evaluate valid
-        Test_Score = evaluator.evaluate_match_success(test_dials_gen, mode='Test')
+        Test_Score = evaluator.summarize_report(test_dials_gen, mode='Test')
         # Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
         test_dials_gens.append(test_dials_gen)
 
@@ -277,14 +277,16 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
 
     # summary of evaluation metrics
     import pandas as pd
-    fields = ['Epoch', 'Valid BLEU', 'Valid Matches', 'Valid Success', 'Valid Score', 'Valid Dialogues',
-              'Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Test Dialogues']
+    # BLEU, MATCHES, SUCCESS, SCORE, P, R, F1
+    fields = ['Epoch',
+              'Valid BLEU', 'Valid Matches', 'Valid Success', 'Valid Score', 'Valid P', 'Valid R', 'Valid F1',
+              'Test BLEU',  'Test Matches',  'Test Success',  'Test Score',  'Test P',  'Test R',  'Test F1']
     df = pd.DataFrame(Scores, columns=fields)
     sdf = df.sort_values(by=['Valid Score'], ascending=False)
     print('Top3:', '=' * 60)
     print(sdf.head(3).transpose())
     print('Best:', '=' * 60) # selected by valid score
-    best_df = sdf.head(1)[['Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Epoch']]
+    best_df = sdf.head(1)[['Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Test P', 'Test R', 'Test F1', 'Epoch']]
     print(best_df.transpose())
     # save best prediction to json, evaluated on valid set
     best_model_id = np.int(best_df['Epoch']) - 1 # epoch start with 1
