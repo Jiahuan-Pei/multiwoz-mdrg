@@ -41,10 +41,7 @@ def parseGoal(goal, d, domain):
 # dialouges is a dict of list, each list consists of generated responses
 def evaluateModel(dialogues, val_dials, delex_path, mode='Valid'):
     """Gathers statistics for the whole sets."""
-    try:
-        fin1 = open(delex_path, 'r')
-    except:
-        print('cannot find the delex file!=', delex_path)
+    fin1 = open(delex_path, 'r')
     delex_dialogues = json.load(fin1)
     successes, matches = 0, 0
     total = 0

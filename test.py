@@ -15,6 +15,7 @@ from utils import util, multiwoz_dataloader
 from models.evaluator import *
 from models.model import Model
 from utils.util import detected_device, pp_mkdir
+from multiwoz.Evaluators import *
 
 # pp added: print out env
 util.get_env_info()
@@ -22,7 +23,7 @@ util.get_env_info()
 parser = argparse.ArgumentParser(description='multiwoz1-bsl-te')
 # 1. Data & Dir
 data_arg = parser.add_argument_group('Data')
-data_arg.add_argument('--data_dir', type=str, default='data', help='the root directory of data')
+data_arg.add_argument('--data_dir', type=str, default='data/multi-woz', help='the root directory of data')
 # data_arg.add_argument('--model_path', type=str, default='results/bsl/models/translate.ckpt', help='Path to a specific models checkpoint.')
 data_arg.add_argument('--model_dir', type=str, default='results/bsl/models/', help='Path to a specific models checkpoint')
 # parser.add_argument('--original', type=str, default='results/bsl/models/', help='Original dir.')
@@ -93,7 +94,7 @@ def decode(num=1, beam_search=False):
 
     model, val_dials, test_dials, input_lang_word2index, output_lang_word2index, intent2index, index2intent  = loadModelAndData(num)
 
-    delex_path = '%s/multi-woz/delex.json' % args.data_dir
+    delex_path = '%s/delex.json' % args.data_dir
 
     start_time = time.time()
     model.beam_search = beam_search
@@ -121,7 +122,8 @@ def decode(num=1, beam_search=False):
 
     print('Current VALID LOSS:', valid_loss)
 
-    Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='valid')
+    # Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
+    Valid_Score = evaluator.summarize_report(val_dials_gen, mode='Valid')
     # evaluteNLG(val_dials_gen, val_dials)
 
     # TESTING
@@ -145,7 +147,8 @@ def decode(num=1, beam_search=False):
 
     print('Current TEST LOSS:', test_loss)
 
-    Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='test')
+    # Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
+    Test_Score = evaluator.summarize_report(test_dials_gen, mode='Test')
     # evaluteNLG(test_dials_gen, test_dials)
 
     print('TIME:', time.time() - start_time)
@@ -193,13 +196,15 @@ def decodeWrapper(beam_search=False):
     # save best generated output to json
     print('Summary'+'~'*50)
     print('Best model: %s'%(Best_model_id))
-    BLEU, MATCHES, SUCCESS, SCORE, total = Best_Test_Score
+    BLEU, MATCHES, SUCCESS, SCORE, P, R, F1 = Best_Test_Score
     mode = 'Test'
     print('%s BLEU: %.4f' % (mode, BLEU))
     print('%s Matches: %2.2f%%' % (mode, MATCHES))
     print('%s Success: %2.2f%%' % (mode, SUCCESS))
     print('%s Score: %.4f' % (mode, SCORE))
-    print('%s Dialogues: %s' % (mode, total))
+    print('%s Precision: %.2f%%' % (mode, P))
+    print('%s Recall: %.2f%%' % (mode, R))
+    print('%s F1: %.2f%%' % (mode, F1))
     suffix = 'bm' if beam_search else 'gd'
     try:
         with open(args.valid_output + 'val_dials_gen_%s.json' % suffix, 'w') as outfile:
@@ -216,6 +221,7 @@ if __name__ == '__main__':
     # create dir for generated outputs of valid and test set
     pp_mkdir(args.valid_output)
     pp_mkdir(args.decode_output)
+    evaluator = MultiWozEvaluator('MultiWozEvaluator')
     print('\n\nGreedy Search'+'='*50)
     decodeWrapper(beam_search=False)
     print('\n\nBeam Search' + '=' * 50)

@@ -49,7 +49,7 @@ net_arg.add_argument('--hid_size_enc', type=int, default=150)
 net_arg.add_argument('--hid_size_dec', type=int, default=150)
 net_arg.add_argument('--hid_size_pol', type=int, default=150)
 net_arg.add_argument('--max_len', type=int, default=50)
-net_arg.add_argument('--vocab_size', type=int, default=401, metavar='V')
+net_arg.add_argument('--vocab_size', type=int, default=400, metavar='V')
 net_arg.add_argument('--use_attn', type=util.str2bool, nargs='?', const=True, default=True) # F
 net_arg.add_argument('--use_emb',  type=util.str2bool, nargs='?', const=True, default=False)
 
@@ -238,7 +238,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
 
         # pp added: evaluate valid
         print('Valid Loss: %.6f' % valid_loss)
-        # BLEU, MATCHES, SUCCESS, SCORE, TOTAL
+        # BLEU, MATCHES, SUCCESS, SCORE, P, R, F1
         Valid_Score = evaluator.summarize_report(val_dials_gen, mode='Valid')
         # Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
         val_dials_gens.append(val_dials_gen) # save generated output for each epoch
