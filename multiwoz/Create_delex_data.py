@@ -305,10 +305,10 @@ def createDelexData():
     # print(dic)
     delex_data = {}
 
-    fin1 = open('data/multi-woz/data.json')
+    fin1 = open('%s/data.json' % data_dir)
     data = json.load(fin1)
 
-    fin2 = open('data/multi-woz/dialogue_acts.json')
+    fin2 = open('%s/dialogue_acts.json' % data_dir)
     data2 = json.load(fin2)
 
     # pp added: our definition of intent, which consists of [domain]-[act_type]
@@ -323,7 +323,7 @@ def createDelexData():
                 # "No Annotation"
                 # print data2[dname][sys_turn]
     intent_set = ['UNK-UNK'] + sorted(list(set(intent_set)))
-    with open('data/intents.json', 'w') as outfile:
+    with open('%s/intents.json' % data_dir, 'w') as outfile:
         json.dump(intent_set, outfile, indent=4)
 
     def get_domain(dialogue):
@@ -382,7 +382,7 @@ def createDelexData():
 
         delex_data[dialogue_name] = dialogue
 
-    with open('data/multi-woz/delex.json', 'w') as outfile:
+    with open('%s/delex.json' % data_dir, 'w') as outfile:
         json.dump(delex_data, outfile)
 
     return delex_data
@@ -393,18 +393,18 @@ def divideData(data):
     the data for three different sets"""
     print('Diving train/test/valid dataset...')
     testListFile = []
-    fin = open('data/multi-woz/testListFile.json')
+    fin = open('%s/testListFile.json' % data_dir)
     for line in fin:
         testListFile.append(line[:-1])
     fin.close()
 
     valListFile = []
-    fin = open('data/multi-woz/valListFile.json')
+    fin = open('%s/valListFile.json' % data_dir)
     for line in fin:
         valListFile.append(line[:-1])
     fin.close()
 
-    trainListFile = open('data/trainListFile', 'w')
+    trainListFile = open('%s/trainListFile' % data_dir, 'w')
 
     test_dials = {}
     val_dials = {}
@@ -458,13 +458,13 @@ def divideData(data):
                     word_freqs_sys[w] += 1
 
     # save all dialogues
-    with open('data/val_dials.json', 'w') as f:
+    with open('%s/val_dials.json' % data_dir , 'w') as f:
         json.dump(val_dials, f, indent=4)
 
-    with open('data/test_dials.json', 'w') as f:
+    with open('%s/test_dials.json' % data_dir, 'w') as f:
         json.dump(test_dials, f, indent=4)
 
-    with open('data/train_dials.json', 'w') as f:
+    with open('%s/train_dials.json' % data_dir, 'w') as f:
         json.dump(train_dials, f, indent=4)
 
     return word_freqs_usr, word_freqs_sys
@@ -487,20 +487,20 @@ def buildDictionaries(word_freqs_usr, word_freqs_sys):
             dic[v] = k
         idx2words.append(dic)
 
-    with open('data/input_lang.index2word.json', 'w') as f:
+    with open('%s/input_lang.index2word.json' % data_dir, 'w') as f:
         json.dump(idx2words[0], f, indent=2)
-    with open('data/input_lang.word2index.json', 'w') as f:
+    with open('%s/input_lang.word2index.json' % data_dir, 'w') as f:
         json.dump(dicts[0], f,indent=2)
-    with open('data/output_lang.index2word.json', 'w') as f:
+    with open('%s/output_lang.index2word.json' % data_dir, 'w') as f:
         json.dump(idx2words[1], f,indent=2)
-    with open('data/output_lang.word2index.json', 'w') as f:
+    with open('%s/output_lang.word2index.json' % data_dir, 'w') as f:
         json.dump(dicts[1], f,indent=2)
 
 
 def main():
     print('Create delexicalized dialogues. Get yourself a coffee, this might take a while.')
     delex_data = createDelexData()
-    # delex_data=json.load(open('data/multi-woz/delex.json')) # used for debug to save tiem
+    # delex_data=json.load(open('%s/delex.json' % data_dir)) # used for debug to save tiem
     # print('Divide dialogues for separate bits - usr, sys, db, bs')
     print('Divide dialogues for separate bits - usr, sys, db, bs, acts')
     word_freqs_usr, word_freqs_sys = divideData(delex_data)
@@ -509,4 +509,5 @@ def main():
 
 
 if __name__ == "__main__":
+    data_dir = 'data/multi-woz'
     main()
