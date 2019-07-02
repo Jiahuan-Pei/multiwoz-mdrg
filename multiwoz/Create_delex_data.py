@@ -224,7 +224,7 @@ def analyze_dialogue(dialogue, maxlen):
         if a == 'No Annotation':
             sys_acts.append(['UNK-UNK'])
         else:
-            sys_acts.append(a.keys())
+            sys_acts.append(list(a.keys()))
     d_pp['sys_acts'] = sys_acts
     # pp added
 
@@ -296,12 +296,13 @@ def createDelexData():
     3) addition of database pointer
     4) saves the delexicalized data
     """
+    print('Creating the delex file...')
     # download the data
     loadData()
     
     # create dictionary of delexicalied values that then we will search against, order matters here!
     dic = Delexicalize.prepareSlotValuesIndependent()
-    print(dic)
+    # print(dic)
     delex_data = {}
 
     fin1 = open('data/multi-woz/data.json')
@@ -332,7 +333,11 @@ def createDelexData():
                 domains[d]=dialogue['goal'][d]
         return domains
 
+    # count = 0
     for dialogue_name in tqdm(data):
+        # count +=1
+        # if count > 5:
+        #     break
         dialogue = data[dialogue_name]
         #print dialogue_name
         domains=get_domain(dialogue)
@@ -386,6 +391,7 @@ def createDelexData():
 def divideData(data):
     """Given test and validation sets, divide
     the data for three different sets"""
+    print('Diving train/test/valid dataset...')
     testListFile = []
     fin = open('data/multi-woz/testListFile.json')
     for line in fin:
@@ -407,12 +413,12 @@ def divideData(data):
     # dictionaries
     word_freqs_usr = OrderedDict()
     word_freqs_sys = OrderedDict()
-    count = 0
+    # count = 0
     for dialogue_name in tqdm(data):
         #print dialogue_name
-        count +=1
-        if count >5:
-            break
+        # count +=1
+        # if count >5:
+        #     break
         dial = get_dial(data[dialogue_name])
         if dial:
             dialogue = {}

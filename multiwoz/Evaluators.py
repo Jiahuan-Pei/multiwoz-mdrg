@@ -1,7 +1,7 @@
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 import math
 import multiwoz.Delexicalize as delex
-from multiwoz.Utils import get_tokenize
+from multiwoz.utils import get_tokenize
 from collections import Counter
 from nltk.util import ngrams
 import json
@@ -9,12 +9,7 @@ from multiwoz.Delexicalize import normalize
 import sqlite3
 import os
 import random
-from utils.util import SOS_token, EOS_token
-
-USR = 'YOU:'
-SYS = 'THEM:'
-BOS_WORD = SOS_token
-EOS_WORD = EOS_token
+from multiwoz.corpora import BOS, EOS, USR, SYS
 
 
 class BaseEvaluator(object):
@@ -750,8 +745,8 @@ class MultiWozEvaluator(BaseEvaluator):
             for t, sent_t in enumerate(dial):
                 label=real_diag['log'][t*2+1]['text']
                 hyp=sent_t
-                ref_tokens = [BOS_WORD] + tokenize(label.replace(SYS, '').replace(USR, '').strip()) + [EOS_WORD]
-                hyp_tokens = [BOS_WORD] + tokenize(hyp.replace(SYS, '').replace(USR, '').strip()) + [EOS_WORD]
+                ref_tokens = [BOS] + tokenize(label.replace(SYS, '').replace(USR, '').strip()) + [EOS]
+                hyp_tokens = [BOS] + tokenize(hyp.replace(SYS, '').replace(USR, '').strip()) + [EOS]
                 refs.append([ref_tokens])
                 hyps.append(hyp_tokens)
 
