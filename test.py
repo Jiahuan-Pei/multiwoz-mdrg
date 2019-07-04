@@ -24,12 +24,8 @@ parser = argparse.ArgumentParser(description='multiwoz1-bsl-te')
 # 1. Data & Dir
 data_arg = parser.add_argument_group('Data')
 data_arg.add_argument('--data_dir', type=str, default='data/multi-woz', help='the root directory of data')
-# data_arg.add_argument('--model_path', type=str, default='results/bsl/models/translate.ckpt', help='Path to a specific models checkpoint.')
-data_arg.add_argument('--model_dir', type=str, default='results/bsl/models/', help='Path to a specific models checkpoint')
-# parser.add_argument('--original', type=str, default='results/bsl/models/', help='Original dir.')
+data_arg.add_argument('--result_dir', type=str, default='results/bsl/')
 data_arg.add_argument('--model_name', type=str, default='translate.ckpt')
-data_arg.add_argument('--valid_output', type=str, default='results/bsl/data/val_dials/', help='Validation Decoding output dir path')
-data_arg.add_argument('--decode_output', type=str, default='results/bsl/data/test_dials/', help='Decoding output dir path')
 
 # 2. MISC
 misc_arg = parser.add_argument_group('Misc')
@@ -50,9 +46,15 @@ args = parser.parse_args()
 args.device = "cuda" if torch.cuda.is_available() else "cpu"
 print('args.device={}'.format(args.device))
 
-# torch.manual_seed(args.seed)
-util.init_seed(args.seed)
+# construct dirs
+args.model_dir = '%s/model/' % args.result_dir
+args.train_output = '%s/data/train_dials/' % args.result_dir
+args.valid_output = '%s/data/valid_dials/' % args.result_dir
+args.decode_output = '%s/data/test_dials/' % args.result_dir
 print(args)
+
+# pp added: init seed
+util.init_seed(args.seed)
 
 def load_config(args):
     config = util.unicode_to_utf8(

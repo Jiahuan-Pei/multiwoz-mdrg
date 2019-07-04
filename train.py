@@ -33,11 +33,8 @@ parser = argparse.ArgumentParser(description='multiwoz1-bsl-tr')
 data_arg = parser.add_argument_group(title='Data')
 data_arg.add_argument('--data_dir', type=str, default='data/multi-woz', help='the root directory of data')
 data_arg.add_argument('--log_dir', type=str, default='logs')
-data_arg.add_argument('--model_dir', type=str, default='results/bsl/models/')
+data_arg.add_argument('--result_dir', type=str, default='results/bsl/')
 data_arg.add_argument('--model_name', type=str, default='translate.ckpt')
-data_arg.add_argument('--train_output', type=str, default='results/bsl/data/train_dials/', help='Training output dir path')
-data_arg.add_argument('--valid_output', type=str, default='results/bsl/data/val_dials/', help='Validation Decoding output dir path')
-data_arg.add_argument('--decode_output', type=str, default='results/bsl/data/test_dials/', help='Decoding output dir path')
 
 # 2.Network
 net_arg = parser.add_argument_group(title='Network')
@@ -108,8 +105,15 @@ args = parser.parse_args()
 args.device = detected_device.type
 print('args.device={}'.format(args.device))
 print('args.intent_type={}'.format(args.intent_type))
-# pp added: init seed
+
+# construct dirs
+args.model_dir = '%s/model/' % args.result_dir
+args.train_output = '%s/data/train_dials/' % args.result_dir
+args.valid_output = '%s/data/valid_dials/' % args.result_dir
+args.decode_output = '%s/data/test_dials/' % args.result_dir
 print(args)
+
+# pp added: init seed
 util.init_seed(args.seed)
 
 def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor=None, name=None):

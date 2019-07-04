@@ -661,7 +661,7 @@ class Model(nn.Module):
                     if qsize > 2000: break
 
                     # fetch the best node
-                    score, _, n = nodes.get()
+                    score, _, n = nodes.get() # pp added: _
                     decoder_input = n.wordid
                     decoder_hidden = n.h
 
@@ -702,7 +702,7 @@ class Model(nn.Module):
 
                 # choose nbest paths, back trace them
                 if len(endnodes) == 0:
-                    endnodes = [nodes.get() for n in range(self.topk)]
+                    endnodes = [(nodes.get()[0], nodes.get()[-1]) for n in range(self.topk)]
 
                 utterances = []
                 for score, n in sorted(endnodes, key=operator.itemgetter(0)):
