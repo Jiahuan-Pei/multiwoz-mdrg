@@ -16,6 +16,9 @@ import torch.nn.functional as F
 from torch import optim
 
 import models.policy as policy
+# pp added: used for PriorityQueue python3, add an extra para in .put() method
+from itertools import count
+unique = count()
 
 from utils.util import SOS_token, EOS_token, PAD_token, detected_device
 default_device = detected_device
@@ -27,6 +30,14 @@ default_device = detected_device
 # learn_loss_weight = True
 # use_moe_model = True # inner models structure partition
 #
+# pp added
+# @total_ordering
+# class PriorityElem:
+#     def __init__(self, elem_to_wrap):
+#         self.wrapped_elem = elem_to_wrap
+#
+#     def __lt__(self, other):
+#         return self.wrapped_elem.priority < other.wrapped_elem.priority
 
 # Shawn beam search decoding
 class BeamSearchNode(object):
@@ -640,6 +651,7 @@ class Model(nn.Module):
                 node = BeamSearchNode(decoder_hidden, None, decoder_input, 0, 1)
                 nodes = PriorityQueue()  # start the queue
                 nodes.put((-node.eval(None, None, None, None),
+                           next(unique),
                            node))
 
                 # start beam search
@@ -649,7 +661,7 @@ class Model(nn.Module):
                     if qsize > 2000: break
 
                     # fetch the best node
-                    score, n = nodes.get()
+                    score, _, n = nodes.get()
                     decoder_input = n.wordid
                     decoder_hidden = n.h
 
@@ -681,7 +693,9 @@ class Model(nn.Module):
                     # put them into queue
                     for i in range(len(nextnodes)):
                         score, nn = nextnodes[i]
-                        nodes.put((score, nn))
+                        nodes.put((score,
+                                   next(unique),
+                                   nn))
 
                     # increase qsize
                     qsize += len(nextnodes)
