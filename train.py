@@ -121,7 +121,7 @@ def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, i
     loss, loss_acts, grad = model.model_train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
     # pp added: experts' loss
     # print('@'*20, '\n', target_tensor)
-    if args.use_moe_loss:  # data separate by intents
+    if False and args.use_moe_loss:  # data separate by intents
         gen_loss_list = []
         if mask_tensor is not None:  # data separate by intents
             # print(mask_tensor)
@@ -250,6 +250,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         # pp added
         model.eval()
         test_dials_gen ={}
+        test_loss = 0
         for name, test_file in list(test_dials.items())[-step:]:
             loader = multiwoz_dataloader.get_loader_by_dialogue(test_file, name,
                                                                 input_lang_word2index, output_lang_word2index,
@@ -259,10 +260,19 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
             if torch.cuda.is_available():
                 data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
             input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+            proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
+                                        bs_tensor, mask_tensor)  # pp added: mask_tensor
+            proba = proba.view(-1, model.vocab_size)  # flatten all predictions
+            loss = model.gen_criterion(proba, target_tensor.view(-1))
+            test_loss += loss.item()
             output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
                                                         db_tensor, bs_tensor, mask_tensor)
             test_dials_gen[name] = output_words
+        # pp added: evaluate test
+        test_len = len(test_dials) # 1000
+        test_loss /= test_len
         # pp added: evaluate valid
+        print('Test Loss: %.6f' % valid_loss)
         Test_Score = evaluator.summarize_report(test_dials_gen, mode='Test')
         # Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
         test_dials_gens.append(test_dials_gen)
@@ -277,20 +287,20 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
 
         model.saveModel(epoch)
         # BLEU, MATCHES, SUCCESS, SCORE, TOTAL
-        Scores.append(tuple([epoch]) + Valid_Score + Test_Score) # combine the tuples; 11 elements
+        Scores.append(tuple([epoch]) + Valid_Score + tuple(['%.2f'%np.exp(valid_loss)]) + Test_Score + tuple(['%.2f'%np.exp(test_loss)])) # combine the tuples; 11 elements
 
     # summary of evaluation metrics
     import pandas as pd
     # BLEU, MATCHES, SUCCESS, SCORE, P, R, F1
     fields = ['Epoch',
-              'Valid BLEU', 'Valid Matches', 'Valid Success', 'Valid Score', 'Valid P', 'Valid R', 'Valid F1',
-              'Test BLEU',  'Test Matches',  'Test Success',  'Test Score',  'Test P',  'Test R',  'Test F1']
+              'Valid BLEU', 'Valid Matches', 'Valid Success', 'Valid Score', 'Valid P', 'Valid R', 'Valid F1', 'Valid PPL',
+              'Test BLEU',  'Test Matches',  'Test Success',  'Test Score',  'Test P',  'Test R',  'Test F1', 'Test PPL']
     df = pd.DataFrame(Scores, columns=fields)
     sdf = df.sort_values(by=['Valid Score'], ascending=False)
     print('Top3:', '=' * 60)
     print(sdf.head(3).transpose())
     print('Best:', '=' * 60) # selected by valid score
-    best_df = sdf.head(1)[['Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Test P', 'Test R', 'Test F1', 'Epoch']]
+    best_df = sdf.head(1)[['Epoch', 'Test PPL', 'Test BLEU', 'Test Matches', 'Test Success', 'Test Score', 'Test P', 'Test R', 'Test F1']]
     print(best_df.transpose())
     # save best prediction to json, evaluated on valid set
     best_model_id = np.int(best_df['Epoch']) - 1 # epoch start with 1

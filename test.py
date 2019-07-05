@@ -154,7 +154,7 @@ def decode(num=1, beam_search=False):
     # evaluteNLG(test_dials_gen, test_dials)
 
     print('TIME:', time.time() - start_time)
-    return Valid_Score, val_dials_gen, Test_Score, test_dials_gen
+    return Valid_Score, val_dials_gen, np.exp(valid_loss), Test_Score, test_dials_gen, np.exp(test_loss)
 
 
 def decodeWrapper(beam_search=False):
@@ -176,6 +176,7 @@ def decodeWrapper(beam_search=False):
     # args.original = args.model_path
     Best_Valid_Score = None
     Best_Test_Score = None
+    Best_PPL = None
     Best_model_id = 0
     Best_val_dials_gen = {}
     Best_test_dials_gen = {}
@@ -183,10 +184,11 @@ def decodeWrapper(beam_search=False):
         print(30 * '-' + 'EVALUATING EPOCH %s' % ii)
         # args.model_path = args.model_path + '-' + str(ii)
         with torch.no_grad():
-            Valid_Score, val_dials_gen, Test_Score, test_dials_gen = decode(ii, beam_search)
+            Valid_Score, val_dials_gen, val_ppl, Test_Score, test_dials_gen, test_ppl = decode(ii, beam_search)
             if Best_Valid_Score is None or Best_Valid_Score[-2] < Valid_Score[-2]:
                 Best_Valid_Score = Valid_Score
                 Best_Test_Score = Test_Score
+                Best_PPL = test_ppl
                 Best_val_dials_gen = val_dials_gen
                 Best_test_dials_gen = test_dials_gen
                 Best_model_id = ii
@@ -200,6 +202,7 @@ def decodeWrapper(beam_search=False):
     print('Best model: %s'%(Best_model_id))
     BLEU, MATCHES, SUCCESS, SCORE, P, R, F1 = Best_Test_Score
     mode = 'Test'
+    print('%s PPL: %.2f' % (mode, Best_PPL))
     print('%s BLEU: %.4f' % (mode, BLEU))
     print('%s Matches: %2.2f%%' % (mode, MATCHES))
     print('%s Success: %2.2f%%' % (mode, SUCCESS))
