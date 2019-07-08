@@ -271,6 +271,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         if 'bi' in cell_type:  # we dont need bidirectionality in decoding
             cell_type = cell_type.strip('bi')
         self.rnn = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p)
+        self.rnn_f = whatCellType(embedding_size + hidden_size*2, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
         self.moe_fc = nn.Linear(output_size*(self.k+1), (self.k+1))
@@ -386,9 +387,79 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # output = F.log_softmax(self.out(output), dim=1) # self.out(output)[batch, out_vocab]
         return decoder_output, decoder_hidden
 
-    def forward(self, input, hidden, encoder_outputs, mask_tensor):
+    def pros_expert_forward(self, input, hidden, encoder_outputs, dec_hidd_with_future):
+        if isinstance(hidden, tuple):
+            h_t = hidden[0]
+        else:
+            h_t = hidden
+        encoder_outputs = encoder_outputs.transpose(0, 1)
+
+        embedded = self.embedding(input)  # .view(1, 1, -1)
+        # embedded = F.dropout(embedded, self.dropout_p)
+
+        # SCORE 3
+        max_len = encoder_outputs.size(1)
+        h_t0 = h_t.transpose(0, 1)  # [1,B,D] -> [B,1,D]
+        h_t = h_t0.repeat(1, max_len, 1)  # [B,1,D]  -> [B,T,D]
+        energy = self.attn(torch.cat((h_t, encoder_outputs), 2))  # [B,T,2D] -> [B,T,D]
+        energy = torch.tanh(energy)
+        energy = energy.transpose(2, 1)  # [B,H,T]
+        v = self.v.repeat(encoder_outputs.size(0), 1).unsqueeze(1)  # [B,1,H]
+        energy = torch.bmm(v, energy)  # [B,1,T]
+        attn_weights = F.softmax(energy, dim=2)  # [B,1,T]
+
+        # getting context
+        context = torch.bmm(attn_weights, encoder_outputs)  # [B,1,H]
+
+        # pp aaded:compute future context use attention on output of decoder
+        dec_hidd_with_future = dec_hidd_with_future.transpose(0, 1)
+        max_len_target = dec_hidd_with_future.size(1)
+        h_t_f = h_t0.repeat(1, max_len_target, 1)
+        energy_f = self.attn(torch.cat((h_t_f, dec_hidd_with_future), 2))
+        energy_f = torch.tanh(energy_f)
+        energy_f = energy_f.transpose(2, 1)  # [B,H,T]
+        v_f = self.v.repeat(dec_hidd_with_future.size(0), 1).unsqueeze(1)  # [B,1,H]
+        energy_f = torch.bmm(v_f, energy_f)
+        attn_weights_f = F.softmax(energy_f, dim=2)
+        context_f = torch.bmm(attn_weights_f, dec_hidd_with_future) # [B,1,H]
+
+
+        # Combine embedded input word and attended context, run through RNN
+        rnn_input = torch.cat((embedded, context, context_f), 2)
+        rnn_input = rnn_input.transpose(0, 1)
+        output, hidden = self.rnn_f(rnn_input, hidden)
+        output = output.squeeze(0)  # (1,B,H)->(B,H)
+
+        output = F.log_softmax(self.out(output), dim=1) # self.out(output)[batch, out_vocab]
+        return output, hidden, embedded.transpose(0, 1)  # , attn_weights
+
+
+    def prospectiveMoE(self, decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future):
+        output_c, hidden_c, embedded_c = self.pros_expert_forward(decoder_input, decoder_hidden,encoder_outputs, dec_hidd_with_future)
+        decoder_output_list, decoder_hidden_list, embedded_list = [output_c], [hidden_c], [embedded_c]
+
+        for mask in mask_tensor:  # each intent has a mask [Batch, 1]
+            decoder_input_k = decoder_input.clone().masked_fill_(mask, value=PAD_token)  # if assigned PAD_token it will count loss
+            decoder_hidden_k = tuple(map(lambda x: x.clone().masked_fill_(mask, value=PAD_token), decoder_hidden))
+            encoder_outputs_k = encoder_outputs.clone().masked_fill_(mask, value=PAD_token)
+            dec_hidd_with_future_k = dec_hidd_with_future.clone().masked_fill_(mask, value=PAD_token)
+            output_k, hidden_k, embedded_k = self.pros_expert_forward(decoder_input_k, decoder_hidden_k, encoder_outputs_k, dec_hidd_with_future_k)
+
+            decoder_output_list.append(output_k)
+            decoder_hidden_list.append(hidden_k)
+            embedded_list.append(embedded_k)
+
+        gamma_expert = self.args.gamma_expert
+        decoder_output, decoder_hidden = self.moe_layer(decoder_output_list, decoder_hidden_list, embedded_list,
+                                                        gamma_expert)
+        return decoder_output, decoder_hidden
+
+    def forward(self, input, hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=None):
         if mask_tensor is not None:
-            output, hidden = self.tokenMoE(input, hidden, encoder_outputs, mask_tensor)
+            if dec_hidd_with_future is None: # don not use future prediction
+                output, hidden = self.tokenMoE(input, hidden, encoder_outputs, mask_tensor)
+            else:
+                output, hidden = self.prospectiveMoE(input, hidden, encoder_outputs, mask_tensor, dec_hidd_with_future)
         else:
             pass
             output, hidden, _ = self.expert_forward(input, hidden, encoder_outputs)
@@ -574,6 +645,7 @@ class Model(nn.Module):
 
         # pp added: calculate new batch size
         proba = torch.zeros(batch_size, target_length, self.vocab_size, device=self.device)  # tensor[Batch, maxlen_target, V]
+        hidd = torch.zeros(batch_size, target_length, self.hid_size_dec, device=self.device)
 
         # generate target sequence step by step !!!
         for t in range(target_len):
@@ -588,7 +660,14 @@ class Model(nn.Module):
                 topv, topi = decoder_output.topk(1)
                 decoder_input = topi.squeeze().detach()  # detach from history as input
 
-            proba[:, t, :] = decoder_output # decoder_output[Batch, TargetVocab]
+            proba[:, t, :] = decoder_output # decoder_output[Batch, TargetVocab] # proba[Batch, Target_MaxLen, Target_Vocab]
+            # pp added
+            if isinstance(decoder_hidden, tuple):
+                hidd0 = decoder_hidden[0]
+            else:
+                hidd0 = decoder_hidden
+            hidd[:, t, :] = hidd0
+
 
         # if we consider sentence info
         if self.args.SentMoE:
@@ -596,7 +675,7 @@ class Model(nn.Module):
            for t in range(target_len):
                # pp added: moe chair
                decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs,
-                                                             mask_tensor)  # decoder_output; decoder_hidden
+                                                             mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
 
                use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False
                if use_teacher_forcing:
@@ -610,6 +689,8 @@ class Model(nn.Module):
 
 
         decoded_sent = None
+        # pp added: GENERATION
+        # decoded_sent = self.decode(target_tensor, decoder_hidden, encoder_outputs, mask_tensor)
 
         return proba, None, decoded_sent
 

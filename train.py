@@ -121,7 +121,7 @@ def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, i
     loss, loss_acts, grad = model.model_train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
     # pp added: experts' loss
     # print('@'*20, '\n', target_tensor)
-    if False and args.use_moe_loss:  # data separate by intents
+    if args.use_moe_loss:  # data separate by intents
         gen_loss_list = []
         if mask_tensor is not None:  # data separate by intents
             # print(mask_tensor)
@@ -214,68 +214,72 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
             print('Train Valid Loss: %.6f' % valid_loss)
 
         # pp added
-        model.eval()
-        val_dials_gen = {}
-        valid_loss = 0
-        for name, val_file in list(val_dials.items())[-step:]:  # for py3
-            loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
-                                                                input_lang_word2index, output_lang_word2index,
-                                                                args.intent_type, intent2index)
-            data = iter(loader).next()
-            # Transfer to GPU
-            if torch.cuda.is_available():
-                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
-            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
-            proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
-                                        bs_tensor, mask_tensor)  # pp added: mask_tensor
-            proba = proba.view(-1, model.vocab_size)  # flatten all predictions
-            loss = model.gen_criterion(proba, target_tensor.view(-1))
-            valid_loss += loss.item()
-            # pp added: evaluation - Plan A
-            # models.eval()
-            output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
-                                                        db_tensor, bs_tensor, mask_tensor)
-            # models.train()
-            val_dials_gen[name] = output_words
-        valid_len = len(val_dials) # 1000
-        valid_loss /= valid_len
+        with torch.no_grad():
+            model.eval()
+            val_dials_gen = {}
+            valid_loss = 0
+            for name, val_file in list(val_dials.items())[-step:]:  # for py3
+                loader = multiwoz_dataloader.get_loader_by_dialogue(val_file, name,
+                                                                    input_lang_word2index, output_lang_word2index,
+                                                                    args.intent_type, intent2index)
+                data = iter(loader).next()
+                # Transfer to GPU
+                if torch.cuda.is_available():
+                    data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+                input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+                proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
+                                            bs_tensor, mask_tensor)  # pp added: mask_tensor
+                proba = proba.view(-1, model.vocab_size)  # flatten all predictions
+                loss = model.gen_criterion(proba, target_tensor.view(-1))
+                valid_loss += loss.item()
+                # pp added: evaluation - Plan A
+                # models.eval()
+                output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
+                                                            db_tensor, bs_tensor, mask_tensor)
+                # models.train()
+                val_dials_gen[name] = output_words
+            valid_len = len(val_dials) # 1000
+            valid_loss /= valid_len
 
-        # pp added: evaluate valid
-        print('Valid Loss: %.6f' % valid_loss)
-        # BLEU, MATCHES, SUCCESS, SCORE, P, R, F1
-        Valid_Score = evaluator.summarize_report(val_dials_gen, mode='Valid')
-        # Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
-        val_dials_gens.append(val_dials_gen) # save generated output for each epoch
-        # Testing
-        # pp added
-        model.eval()
-        test_dials_gen ={}
-        test_loss = 0
-        for name, test_file in list(test_dials.items())[-step:]:
-            loader = multiwoz_dataloader.get_loader_by_dialogue(test_file, name,
-                                                                input_lang_word2index, output_lang_word2index,
-                                                                args.intent_type, intent2index)
-            data = iter(loader).next()
-            # Transfer to GPU
-            if torch.cuda.is_available():
-                data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
-            input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
-            proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
-                                        bs_tensor, mask_tensor)  # pp added: mask_tensor
-            proba = proba.view(-1, model.vocab_size)  # flatten all predictions
-            loss = model.gen_criterion(proba, target_tensor.view(-1))
-            test_loss += loss.item()
-            output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
-                                                        db_tensor, bs_tensor, mask_tensor)
-            test_dials_gen[name] = output_words
-        # pp added: evaluate test
-        test_len = len(test_dials) # 1000
-        test_loss /= test_len
-        # pp added: evaluate valid
-        print('Test Loss: %.6f' % valid_loss)
-        Test_Score = evaluator.summarize_report(test_dials_gen, mode='Test')
-        # Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
-        test_dials_gens.append(test_dials_gen)
+            # pp added: evaluate valid
+            print('Valid Loss: %.6f' % valid_loss)
+            # BLEU, MATCHES, SUCCESS, SCORE, P, R, F1
+            Valid_Score = evaluator.summarize_report(val_dials_gen, mode='Valid')
+            # Valid_Score = evaluateModel(val_dials_gen, val_dials, delex_path, mode='Valid')
+            val_dials_gens.append(val_dials_gen) # save generated output for each epoch
+            # Testing
+            # pp added
+            model.eval()
+            test_dials_gen ={}
+            test_loss = 0
+            for name, test_file in list(test_dials.items())[-step:]:
+                loader = multiwoz_dataloader.get_loader_by_dialogue(test_file, name,
+                                                                    input_lang_word2index, output_lang_word2index,
+                                                                    args.intent_type, intent2index)
+                data = iter(loader).next()
+                # Transfer to GPU
+                if torch.cuda.is_available():
+                    data = [data[i].cuda() if isinstance(data[i], torch.Tensor) else data[i] for i in range(len(data))]
+                input_tensor, input_lengths, target_tensor, target_lengths, bs_tensor, db_tensor, mask_tensor = data
+                proba, _, _ = model.forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor,
+                                            bs_tensor, mask_tensor)  # pp added: mask_tensor
+                proba = proba.view(-1, model.vocab_size)  # flatten all predictions
+
+                loss = model.gen_criterion(proba, target_tensor.view(-1))
+                test_loss += loss.item()
+
+                output_words, loss_sentence = model.predict(input_tensor, input_lengths, target_tensor, target_lengths,
+                                                            db_tensor, bs_tensor, mask_tensor)
+
+                test_dials_gen[name] = output_words
+            # pp added: evaluate test
+            test_len = len(test_dials) # 1000
+            test_loss /= test_len
+            # pp added: evaluate valid
+            print('Test Loss: %.6f' % valid_loss)
+            Test_Score = evaluator.summarize_report(test_dials_gen, mode='Test')
+            # Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
+            test_dials_gens.append(test_dials_gen)
 
         model.train()
         # pp added: evaluation - Plan B
