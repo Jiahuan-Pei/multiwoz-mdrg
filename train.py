@@ -27,6 +27,8 @@ from multiwoz.Evaluators import *
 # pp added: print out env
 util.get_env_info()
 
+print('Start time={}'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+
 parser = argparse.ArgumentParser(description='multiwoz1-bsl-tr')
 # Group args
 # 1. Data & Dirs
@@ -353,3 +355,5 @@ if __name__ == '__main__':
     evaluator = MultiWozEvaluator('MultiWozEvaluator')
 
     trainIters(model, intent2index, n_epochs=args.max_epochs, args=args)
+
+    print('End time={}'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
