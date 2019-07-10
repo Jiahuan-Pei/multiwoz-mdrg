@@ -275,6 +275,9 @@ class MoESeqAttnDecoderRNN(nn.Module):
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
         self.moe_fc = nn.Linear(output_size*(self.k+1), (self.k+1))
+        # self.moe_fc = nn.Linear((T,B,H), (self.k+1))
+        # self.moe_fc_hid = nn.Linear(hidden_size*(self.k+1), (self.k+1))
+
         self.out = nn.Linear(hidden_size, output_size)
         self.score = nn.Linear(self.hidden_size + self.hidden_size, self.hidden_size)
         self.attn_combine = nn.Linear(embedding_size + hidden_size, embedding_size)
@@ -285,6 +288,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
         self.v = nn.Parameter(torch.rand(hidden_size))
         stdv = 1. / math.sqrt(self.v.size(0))
         self.v.data.normal_(mean=0, std=stdv)
+
+        # self.attn_dec_hid = Attn(self.method, hidden_size, self.device)
 
     def expert_forward(self, input, hidden, encoder_outputs):
         if isinstance(hidden, tuple):
@@ -450,8 +455,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
             embedded_list.append(embedded_k)
 
         gamma_expert = self.args.gamma_expert
-        decoder_output, decoder_hidden = self.moe_layer(decoder_output_list, decoder_hidden_list, embedded_list,
-                                                        gamma_expert)
+        decoder_output, decoder_hidden = self.moe_layer(decoder_output_list, decoder_hidden_list, embedded_list, gamma_expert)
         return decoder_output, decoder_hidden
 
     def forward(self, input, hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=None):
@@ -652,13 +656,15 @@ class Model(nn.Module):
             # pp added: moe chair
             decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor) # decoder_output; decoder_hidden
 
-            use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False
-            if use_teacher_forcing:
+            # use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False # pp added: self.args.SentMoE is False
+            use_teacher_forcing = True if random.random() < self.args.teacher_ratio and self.args.SentMoE is False else False # pp added: self.args.SentMoE is False
+            if use_teacher_forcing: # if use SentMoE, we should stop teacher forcing for experts
                 decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
             else:
                 # Without teacher forcing: use its own predictions as the next input
                 topv, topi = decoder_output.topk(1)
-                decoder_input = topi.squeeze().detach()  # detach from history as input
+                # decoder_input = topi.squeeze().detach()  # detach from history as input
+                decoder_input = topi.detach()  # detach from history as input
 
             proba[:, t, :] = decoder_output # decoder_output[Batch, TargetVocab] # proba[Batch, Target_MaxLen, Target_Vocab]
             # pp added
