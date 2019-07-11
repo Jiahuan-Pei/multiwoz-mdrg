@@ -123,7 +123,7 @@ def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, i
     loss, loss_acts, grad = model.model_train(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor, name)
     # pp added: experts' loss
     # print('@'*20, '\n', target_tensor)
-    if args.use_moe_loss:  # data separate by intents
+    if args.use_moe_loss and False:  # data separate by intents
         gen_loss_list = []
         if mask_tensor is not None:  # data separate by intents
             # print(mask_tensor)

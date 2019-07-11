@@ -689,7 +689,8 @@ class Model(nn.Module):
                else:
                    # Without teacher forcing: use its own predictions as the next input
                    topv, topi = decoder_output.topk(1)
-                   decoder_input = topi.squeeze().detach()  # detach from history as input
+                   # decoder_input = topi.squeeze().detach()  # detach from history as input
+                   decoder_input = topi.detach()  # detach from history as input
 
                proba[:, t, :] = decoder_output  # decoder_output[Batch, TargetVocab]
 
