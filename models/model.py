@@ -274,8 +274,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
         self.rnn_f = whatCellType(embedding_size + hidden_size*2, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
-        self.moe_fc = nn.Linear((output_size+hidden_size)*(self.k+1), (self.k+1))
-        # self.moe_fc = nn.Linear((T,B,H), (self.k+1))
+        # self.moe_fc = nn.Linear((output_size+hidden_size)*(self.k+1), (self.k+1))
+        self.moe_fc = nn.Linear(output_size *(self.k+1), (self.k+1))
         # self.moe_fc_hid = nn.Linear(hidden_size*(self.k+1), (self.k+1))
 
         self.out = nn.Linear(hidden_size, output_size)
@@ -331,10 +331,10 @@ class MoESeqAttnDecoderRNN(nn.Module):
         chair_dec_hid = decoder_hidden_list[0] # chair
         expert_dec_hid_list = decoder_hidden_list[1:] # experts
         # 1. only use decoder_output compute weights
-        # cat_dec_out = torch.cat(decoder_output_list, -1) # (B, (k+1)*V) # Experts
+        cat_dec_out = torch.cat(decoder_output_list, -1) # (B, (k+1)*V) # Experts
         # 2. use both decoder_output & decoder_hidden
-        cat_dec_list = [torch.cat((o, x.squeeze(0)), 1) for o, (x, y) in zip(decoder_output_list, decoder_hidden_list)]
-        cat_dec_out = torch.cat(cat_dec_list, -1)
+        # cat_dec_list = [torch.cat((o, x.squeeze(0)), 1) for o, (x, y) in zip(decoder_output_list, decoder_hidden_list)]
+        # cat_dec_out = torch.cat(cat_dec_list, -1)
         # MOE weights computation + normalization ------ Start
         moe_weights = self.moe_fc(cat_dec_out) #[Batch, Intent]
         moe_weights = F.log_softmax(moe_weights, dim=1)
