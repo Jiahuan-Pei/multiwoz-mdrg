@@ -4,7 +4,7 @@ from __future__ import division, print_function, unicode_literals
 import argparse
 import json
 import random
-import time
+import datetime
 from io import open
 import os
 import shutil
@@ -27,7 +27,8 @@ from multiwoz.Evaluators import *
 # pp added: print out env
 util.get_env_info()
 
-print('Start time={}'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+all_start_time = datetime.datetime.now()
+print('Start time={}'.format(all_start_time.strftime("%Y-%m-%d %H:%M:%S")))
 
 parser = argparse.ArgumentParser(description='multiwoz1-bsl-tr')
 # Group args
@@ -156,14 +157,14 @@ def trainOne(print_loss_total,print_act_total, print_grad_total, input_tensor, i
 
 def trainIters(model, intent2index, n_epochs=10, args=args):
     prev_min_loss, early_stop_count = 1 << 30, args.early_stop_count
-    start = time.time()
+    start = datetime.datetime.now()
     # Valid_Scores, Test_Scores = [], []
     Scores = []
     val_dials_gens, test_dials_gens = [], []
     for epoch in range(1, n_epochs + 1):
         print('%s\nEpoch=%s (%s %%)' % ('~'*50, epoch, epoch / n_epochs * 100))
         print_loss_total = 0; print_grad_total = 0; print_act_total = 0  # Reset every print_every
-        start_time = time.time()
+        start_time = datetime.datetime.now()
         # watch out where do you put it
         model.optimizer = Adam(lr=args.lr_rate, params=filter(lambda x: x.requires_grad, model.parameters()), weight_decay=args.l2_norm)
         model.optimizer_policy = Adam(lr=args.lr_rate, params=filter(lambda x: x.requires_grad, model.policy.parameters()), weight_decay=args.l2_norm)
@@ -188,7 +189,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
         print_loss_avg = print_loss_total / train_len
         print_act_total_avg = print_act_total / train_len
         print_grad_avg = print_grad_total / train_len
-        print('Train Time:%.4f' % (time.time() - start_time))
+        print('Train Time:%.4f' % (datetime.datetime.now() - start_time).seconds)
         print('Train Loss: %.6f\nTrain Grad: %.6f' % (print_loss_avg, print_grad_avg))
 
         if not args.debug:
@@ -358,4 +359,6 @@ if __name__ == '__main__':
 
     trainIters(model, intent2index, n_epochs=args.max_epochs, args=args)
 
-    print('End time={}'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+    all_end_time = datetime.datetime.now()
+    print('End time={}'.format(all_start_time.strftime("%Y-%m-%d %H:%M:%S")))
+    print('Use time={} seconds'.format((all_end_time-all_start_time).seconds))

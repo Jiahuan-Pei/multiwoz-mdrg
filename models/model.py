@@ -274,7 +274,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         self.rnn_f = whatCellType(embedding_size + hidden_size*2, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
-        self.moe_fc = nn.Linear(output_size*(self.k+1), (self.k+1))
+        self.moe_fc = nn.Linear((output_size+hidden_size)*(self.k+1), (self.k+1))
         # self.moe_fc = nn.Linear((T,B,H), (self.k+1))
         # self.moe_fc_hid = nn.Linear(hidden_size*(self.k+1), (self.k+1))
 
@@ -330,7 +330,11 @@ class MoESeqAttnDecoderRNN(nn.Module):
         expert_dec_out_list = decoder_output_list[1:] # experts
         chair_dec_hid = decoder_hidden_list[0] # chair
         expert_dec_hid_list = decoder_hidden_list[1:] # experts
-        cat_dec_out = torch.cat(decoder_output_list, -1) # (B, (k+1)*V) # Experts
+        # 1. only use decoder_output compute weights
+        # cat_dec_out = torch.cat(decoder_output_list, -1) # (B, (k+1)*V) # Experts
+        # 2. use both decoder_output & decoder_hidden
+        cat_dec_list = [torch.cat((o, x.squeeze(0)), 1) for o, (x, y) in zip(decoder_output_list, decoder_hidden_list)]
+        cat_dec_out = torch.cat(cat_dec_list, -1)
         # MOE weights computation + normalization ------ Start
         moe_weights = self.moe_fc(cat_dec_out) #[Batch, Intent]
         moe_weights = F.log_softmax(moe_weights, dim=1)
@@ -621,7 +625,7 @@ class Model(nn.Module):
         elif self.args.optim == 'adam':
             self.optimizer = optim.Adam(lr=self.args.lr_rate, params=filter(lambda x: x.requires_grad, self.parameters()), weight_decay=self.args.l2_norm)
 
-    def forward(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None): # pp added: acts_list
+    def retro_forward(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None): # pp added: acts_list
         """Given the user sentence, user belief state and database pointer,
         encode the sentence, decide what policy vector construct and
         feed it as the first hiddent state to the decoder.
@@ -674,32 +678,55 @@ class Model(nn.Module):
                 hidd0 = decoder_hidden
             hidd[:, t, :] = hidd0
 
-
-        # if we consider sentence info
-        if self.args.SentMoE:
-           # generate target sequence step by step !!!
-           for t in range(target_len):
-               # pp added: moe chair
-               decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs,
-                                                             mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
-
-               use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False
-               if use_teacher_forcing:
-                   decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
-               else:
-                   # Without teacher forcing: use its own predictions as the next input
-                   topv, topi = decoder_output.topk(1)
-                   # decoder_input = topi.squeeze().detach()  # detach from history as input
-                   decoder_input = topi.detach()  # detach from history as input
-
-               proba[:, t, :] = decoder_output  # decoder_output[Batch, TargetVocab]
-
-
         decoded_sent = None
         # pp added: GENERATION
         # decoded_sent = self.decode(target_tensor, decoder_hidden, encoder_outputs, mask_tensor)
 
+        return proba, hidd, decoded_sent
+
+    def forward(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor,
+                      mask_tensor=None):  # pp added: acts_list
+        proba, hidd, decoded_sent = self.retro_forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor,mask_tensor)
+
+        # if we consider sentence info
+        if self.args.SentMoE:
+            # for fixed encoding this is zero so it does not contribute
+            batch_size, seq_len = input_tensor.size()
+
+            # ENCODER
+            encoder_outputs, encoder_hidden = self.encoder(input_tensor,
+                                                           input_lengths)  # encoder_outputs: tensor(maxlen_input, batch, 150); encoder_hidden: tuple, each element is a tensor: [1, batch, 150]
+
+            # POLICY
+            decoder_hidden = self.policy(encoder_hidden, db_tensor,
+                                         bs_tensor)  # decoder_hidden: tuple, each element is a tensor: [1, batch, 150]
+
+            # GENERATOR
+            # Teacher forcing: Feed the target as the next input
+            _, target_len = target_tensor.size()
+
+            decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long,
+                                            device=self.device)  # tensor[batch, 1]
+
+            # generate target sequence step by step !!!
+            for t in range(target_len):
+                # pp added: moe chair
+                decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs,
+                                                              mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
+
+                use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False
+                if use_teacher_forcing:
+                    decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
+                else:
+                    # Without teacher forcing: use its own predictions as the next input
+                    topv, topi = decoder_output.topk(1)
+                    # decoder_input = topi.squeeze().detach()  # detach from history as input
+                    decoder_input = topi.detach()  # detach from history as input
+
+                proba[:, t, :] = decoder_output  # decoder_output[Batch, TargetVocab]
+
         return proba, None, decoded_sent
+
 
     def predict(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None):
         # pp added
