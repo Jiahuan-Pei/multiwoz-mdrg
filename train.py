@@ -110,10 +110,11 @@ print('args.device={}'.format(args.device))
 print('args.intent_type={}'.format(args.intent_type))
 
 # construct dirs
-args.model_dir = '%s/model/' % args.result_dir
-args.train_output = '%s/data/train_dials/' % args.result_dir
-args.valid_output = '%s/data/valid_dials/' % args.result_dir
-args.decode_output = '%s/data/test_dials/' % args.result_dir
+args.model_dir = '%s/model' % args.result_dir
+args.train_output = '%s/data/train_dials' % args.result_dir
+args.valid_output = '%s/data/valid_dials' % args.result_dir
+args.decode_output = '%s/data/test_dials' % args.result_dir
+args.delex_path = '%s/delex.json' % args.data_dir
 print(args)
 
 # pp added: init seed
@@ -343,7 +344,7 @@ if __name__ == '__main__':
     with open('{}/test_dials.json'.format(args.data_dir)) as outfile:
         test_dials = json.load(outfile)
 
-    delex_path = '%s/multi-woz/delex.json' % args.data_dir
+    # delex_path = '%s/delex.json' % args.data_dir
 
     # create dir for generated outputs of valid and test set
     pp_mkdir(args.valid_output)
@@ -355,7 +356,7 @@ if __name__ == '__main__':
     if args.load_param:
         model.loadModel(args.epoch_load)
 
-    evaluator = MultiWozEvaluator('MultiWozEvaluator')
+    evaluator = MultiWozEvaluator('MultiWozEvaluator', delex_path=args.delex_path)
 
     trainIters(model, intent2index, n_epochs=args.max_epochs, args=args)
 

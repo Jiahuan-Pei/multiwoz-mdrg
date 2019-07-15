@@ -21,6 +21,7 @@ from itertools import count
 unique = count()
 
 from utils.util import SOS_token, EOS_token, PAD_token, detected_device
+PAD_model = 0 # used for set 0 elements in tensor
 default_device = detected_device
 # SOS_token = 0
 # EOS_token = 1
@@ -374,9 +375,9 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # decoder_output_list, decoder_hidden_list, embedded_list = [], [], []
         # count = 0
         for mask in mask_tensor: # each intent has a mask [Batch, 1]
-            decoder_input_k = decoder_input.clone().masked_fill_(mask, value=PAD_token) # if assigned PAD_token it will count loss
-            decoder_hidden_k = tuple(map(lambda x: x.clone().masked_fill_(mask, value=PAD_token), decoder_hidden))
-            encoder_outputs_k = encoder_outputs.clone().masked_fill_(mask, value=PAD_token)
+            decoder_input_k = decoder_input.clone().masked_fill_(mask, value=PAD_model) # if assigned PAD_token it will count loss
+            decoder_hidden_k = tuple(map(lambda x: x.clone().masked_fill_(mask, value=PAD_model), decoder_hidden))
+            encoder_outputs_k = encoder_outputs.clone().masked_fill_(mask, value=PAD_model)
             # test if there's someone not all PADDED
             # if torch.min(decoder_input_k)!=PAD_token or torch.min(decoder_hidden_k[0])!=PAD_token or torch.min(decoder_hidden_k[1])!=PAD_token or torch.min(encoder_outputs_k)!=PAD_token:
                 # print(decoder_input_k, '\n', decoder_hidden_k,'\n', encoder_outputs_k)
@@ -448,10 +449,10 @@ class MoESeqAttnDecoderRNN(nn.Module):
         decoder_output_list, decoder_hidden_list, embedded_list = [output_c], [hidden_c], [embedded_c]
 
         for mask in mask_tensor:  # each intent has a mask [Batch, 1]
-            decoder_input_k = decoder_input.clone().masked_fill_(mask, value=PAD_token)  # if assigned PAD_token it will count loss
-            decoder_hidden_k = tuple(map(lambda x: x.clone().masked_fill_(mask, value=PAD_token), decoder_hidden))
-            encoder_outputs_k = encoder_outputs.clone().masked_fill_(mask, value=PAD_token)
-            dec_hidd_with_future_k = dec_hidd_with_future.clone().masked_fill_(mask, value=PAD_token)
+            decoder_input_k = decoder_input.clone().masked_fill_(mask, value=PAD_model)  # if assigned PAD_token it will count loss
+            decoder_hidden_k = tuple(map(lambda x: x.clone().masked_fill_(mask, value=PAD_model), decoder_hidden))
+            encoder_outputs_k = encoder_outputs.clone().masked_fill_(mask, value=PAD_model)
+            dec_hidd_with_future_k = dec_hidd_with_future.clone().masked_fill_(mask, value=PAD_model)
             output_k, hidden_k, embedded_k = self.pros_expert_forward(decoder_input_k, decoder_hidden_k, encoder_outputs_k, dec_hidd_with_future_k)
 
             decoder_output_list.append(output_k)
@@ -684,8 +685,7 @@ class Model(nn.Module):
 
         return proba, hidd, decoded_sent
 
-    def forward(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor,
-                      mask_tensor=None):  # pp added: acts_list
+    def forward(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None):  # pp added: acts_list
         proba, hidd, decoded_sent = self.retro_forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor,mask_tensor)
 
         # if we consider sentence info
@@ -694,25 +694,21 @@ class Model(nn.Module):
             batch_size, seq_len = input_tensor.size()
 
             # ENCODER
-            encoder_outputs, encoder_hidden = self.encoder(input_tensor,
-                                                           input_lengths)  # encoder_outputs: tensor(maxlen_input, batch, 150); encoder_hidden: tuple, each element is a tensor: [1, batch, 150]
+            encoder_outputs, encoder_hidden = self.encoder(input_tensor, input_lengths)  # encoder_outputs: tensor(maxlen_input, batch, 150); encoder_hidden: tuple, each element is a tensor: [1, batch, 150]
 
             # POLICY
-            decoder_hidden = self.policy(encoder_hidden, db_tensor,
-                                         bs_tensor)  # decoder_hidden: tuple, each element is a tensor: [1, batch, 150]
+            decoder_hidden = self.policy(encoder_hidden, db_tensor, bs_tensor)  # decoder_hidden: tuple, each element is a tensor: [1, batch, 150]
 
             # GENERATOR
             # Teacher forcing: Feed the target as the next input
             _, target_len = target_tensor.size()
 
-            decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long,
-                                            device=self.device)  # tensor[batch, 1]
+            decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long, device=self.device)  # tensor[batch, 1]
 
             # generate target sequence step by step !!!
             for t in range(target_len):
                 # pp added: moe chair
-                decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs,
-                                                              mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
+                decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
 
                 use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False
                 if use_teacher_forcing:
