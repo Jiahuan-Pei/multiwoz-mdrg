@@ -12,9 +12,12 @@ class DefaultPolicy(nn.Module):
         self.W_bs = nn.Linear(bs_size, hidden_size_pol, bias=False)
         self.W_db = nn.Linear(db_size, hidden_size_pol, bias=False)
 
-    def forward(self, encodings, db_tensor, bs_tensor, act_tensor=None):
-        if isinstance(encodings, tuple):
-            hidden = encodings[0]
+    def forward(self, encodings, db_tensor, bs_tensor, num_directions=1, act_tensor=None):
+        if isinstance(encodings, tuple): # lstm
+            if num_directions == 2: # bilstm
+                hidden = encodings[0][0]
+            else:
+                hidden = encodings[0]
         else:
             hidden = encodings
 
@@ -23,7 +26,10 @@ class DefaultPolicy(nn.Module):
         output = torch.tanh(output)
 
         if isinstance(encodings, tuple):  # return LSTM tuple
-            return (output.unsqueeze(0), encodings[1])
+            if num_directions == 2:
+                return (output.unsqueeze(0), encodings[1][0].unsqueeze(0))
+            else:
+                return (output.unsqueeze(0), encodings[1])
         else:
             return output.unsqueeze(0)
 

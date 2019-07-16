@@ -246,11 +246,15 @@ class SeqAttnDecoderRNN(nn.Module):
         # Combine embedded input word and attended context, run through RNN
         rnn_input = torch.cat((embedded, context), 2)
         rnn_input = rnn_input.transpose(0, 1)
-        output, hidden = self.rnn(rnn_input, hidden)
-        output = output.squeeze(0)  # (1,B,V)->(B,V)
+        try:
+            output, hidden = self.rnn(rnn_input, hidden)
+            output = output.squeeze(0)  # (1,B,V)->(B,V)
 
-        output = F.log_softmax(self.out(output), dim=1)
-        return output, hidden  # , attn_weights
+            output = F.log_softmax(self.out(output), dim=1)
+            return output, hidden  # , attn_weights
+        except:
+            pass
+
 
 class MoESeqAttnDecoderRNN(nn.Module):
     def __init__(self, embedding_size, hidden_size, output_size, cell_type, k=1, dropout_p=0.1, max_length=30, args=None,  device=default_device):
@@ -432,6 +436,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
         energy_f = torch.bmm(v_f, energy_f)
         attn_weights_f = F.softmax(energy_f, dim=2)
         context_f = torch.bmm(attn_weights_f, dec_hidd_with_future) # [B,1,H]
+        # context_f = dec_hidd_with_future
+
 
 
         # Combine embedded input word and attended context, run through RNN
@@ -643,8 +649,11 @@ class Model(nn.Module):
         encoder_outputs, encoder_hidden = self.encoder(input_tensor, input_lengths) # encoder_outputs: tensor(maxlen_input, batch, 150); encoder_hidden: tuple, each element is a tensor: [1, batch, 150]
 
         # POLICY
-        decoder_hidden = self.policy(encoder_hidden, db_tensor, bs_tensor) # decoder_hidden: tuple, each element is a tensor: [1, batch, 150]
+        decoder_hidden = self.policy(encoder_hidden, db_tensor, bs_tensor, self.num_directions) # decoder_hidden: tuple, each element is a tensor: [1, batch, 150]
 
+        # # pp added
+        # if self.args.cell_type == 'bilstm':
+        #     decoder_hidden = decoder_hidden[0]
         # GENERATOR
         # Teacher forcing: Feed the target as the next input
         _, target_len = target_tensor.size()
@@ -683,7 +692,7 @@ class Model(nn.Module):
         # pp added: GENERATION
         # decoded_sent = self.decode(target_tensor, decoder_hidden, encoder_outputs, mask_tensor)
 
-        return proba, hidd, decoded_sent
+        return proba, hidd.detach(), decoded_sent
 
     def forward(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None):  # pp added: acts_list
         proba, hidd, decoded_sent = self.retro_forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor,mask_tensor)
@@ -697,7 +706,7 @@ class Model(nn.Module):
             encoder_outputs, encoder_hidden = self.encoder(input_tensor, input_lengths)  # encoder_outputs: tensor(maxlen_input, batch, 150); encoder_hidden: tuple, each element is a tensor: [1, batch, 150]
 
             # POLICY
-            decoder_hidden = self.policy(encoder_hidden, db_tensor, bs_tensor)  # decoder_hidden: tuple, each element is a tensor: [1, batch, 150]
+            decoder_hidden = self.policy(encoder_hidden, db_tensor, bs_tensor, self.num_directions)  # decoder_hidden: tuple, each element is a tensor: [1, batch, 150]
 
             # GENERATOR
             # Teacher forcing: Feed the target as the next input
@@ -731,7 +740,7 @@ class Model(nn.Module):
             encoder_outputs, encoder_hidden = self.encoder(input_tensor, input_lengths)
 
             # POLICY
-            decoder_hidden = self.policy(encoder_hidden, db_tensor, bs_tensor)
+            decoder_hidden = self.policy(encoder_hidden, db_tensor, bs_tensor, self.num_directions)
 
             # GENERATION
             decoded_words = self.decode(target_tensor, decoder_hidden, encoder_outputs, mask_tensor)

@@ -36,7 +36,7 @@ parser = argparse.ArgumentParser(description='multiwoz1-bsl-tr')
 data_arg = parser.add_argument_group(title='Data')
 data_arg.add_argument('--data_dir', type=str, default='data/multi-woz', help='the root directory of data')
 data_arg.add_argument('--log_dir', type=str, default='logs')
-data_arg.add_argument('--result_dir', type=str, default='results/bsl/')
+data_arg.add_argument('--result_dir', type=str, default='results/bsl')
 data_arg.add_argument('--model_name', type=str, default='translate.ckpt')
 
 # 2.Network
@@ -163,6 +163,9 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
     Scores = []
     val_dials_gens, test_dials_gens = [], []
     for epoch in range(1, n_epochs + 1):
+        # pp added
+        if args.SentMoE:
+            args.SentMoE = False if epoch<=10 else True
         print('%s\nEpoch=%s (%s %%)' % ('~'*50, epoch, epoch / n_epochs * 100))
         print_loss_total = 0; print_grad_total = 0; print_act_total = 0  # Reset every print_every
         start_time = datetime.datetime.now()
