@@ -246,14 +246,14 @@ class SeqAttnDecoderRNN(nn.Module):
         # Combine embedded input word and attended context, run through RNN
         rnn_input = torch.cat((embedded, context), 2)
         rnn_input = rnn_input.transpose(0, 1)
-        try:
-            output, hidden = self.rnn(rnn_input, hidden)
-            output = output.squeeze(0)  # (1,B,V)->(B,V)
 
-            output = F.log_softmax(self.out(output), dim=1)
-            return output, hidden  # , attn_weights
-        except:
-            pass
+        output, hidden = self.rnn(rnn_input, hidden)
+        output = output.squeeze(0)  # (1,B,V)->(B,V)
+
+        output = F.log_softmax(self.out(output), dim=1)
+        return output, hidden  # , attn_weights
+
+
 
 
 class MoESeqAttnDecoderRNN(nn.Module):
@@ -308,8 +308,10 @@ class MoESeqAttnDecoderRNN(nn.Module):
 
         # SCORE 3
         max_len = encoder_outputs.size(1)
-        h_t = h_t.transpose(0, 1)  # [1,B,D] -> [B,1,D]
+        h_t_reshaped = h_t.unsqueeze(0) if len(h_t.size()) == 2 else h_t # pp added: make sure h_t is [1,B,D]
+        h_t = h_t_reshaped.transpose(0, 1)  # [1,B,D] -> [B,1,D]
         h_t = h_t.repeat(1, max_len, 1)  # [B,1,D]  -> [B,T,D]
+        
         energy = self.attn(torch.cat((h_t, encoder_outputs), 2))  # [B,T,2D] -> [B,T,D]
         energy = torch.tanh(energy)
         energy = energy.transpose(2, 1)  # [B,H,T]
@@ -323,8 +325,17 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # Combine embedded input word and attended context, run through RNN
         rnn_input = torch.cat((embedded, context), 2)
         rnn_input = rnn_input.transpose(0, 1)
-        output, hidden = self.rnn(rnn_input, hidden)
-        output = output.squeeze(0)  # (1,B,H)->(B,H)
+
+        # pp added
+        new_hid = h_t_reshaped
+        if isinstance(hidden, tuple):
+            if len(hidden)==2:
+                new_hid = (h_t_reshaped, hidden[1])
+            # elif len(hidden)==1:
+            #     new_hid = (h_t_reshaped)
+
+        output, hidden = self.rnn(rnn_input, new_hid)      # hidden to h_t_reshaped
+        output = output.squeeze(0)  # (1,B,H)->(Batu,H)
 
         output = F.log_softmax(self.out(output), dim=1) # self.out(output)[batch, out_vocab]
         return output, hidden, embedded.transpose(0, 1)  # , attn_weights
@@ -365,9 +376,15 @@ class MoESeqAttnDecoderRNN(nn.Module):
         output = gamma_expert * output + (1-gamma_expert) * chair_dec_out # [2, 400]
         # hidden
         moe_weights_hidden = moe_weights.expand(-1, -1, decoder_hidden_list[0][0].size(-1))  # [I, B, H]; [8,2,5]
-        stack_dec_hid = torch.stack([a.squeeze(0) for a, b in decoder_hidden_list]), torch.stack([b.squeeze(0) for a, b in decoder_hidden_list]) # [I, B, H]
-        hidden = stack_dec_hid[0].mul(moe_weights_hidden).sum(0).unsqueeze(0), stack_dec_hid[1].mul(moe_weights_hidden).sum(0).unsqueeze(0) # [B, H]
-        hidden = gamma_expert * hidden[0] + (1-gamma_expert) * chair_dec_hid[0], gamma_expert * hidden[1] + (1-gamma_expert) * chair_dec_hid[1]
+        if isinstance(decoder_hidden_list[0], tuple): # for lstm
+            stack_dec_hid = torch.stack([a.squeeze(0) for a, b in decoder_hidden_list]), torch.stack([b.squeeze(0) for a, b in decoder_hidden_list]) # [I, B, H]
+            hidden = stack_dec_hid[0].mul(moe_weights_hidden).sum(0).unsqueeze(0), stack_dec_hid[1].mul(moe_weights_hidden).sum(0).unsqueeze(0) # [B, H]
+            hidden = gamma_expert * hidden[0] + (1-gamma_expert) * chair_dec_hid[0], gamma_expert * hidden[1] + (1-gamma_expert) * chair_dec_hid[1]
+        else: # for gru
+            stack_dec_hid = torch.stack([a.squeeze(0) for a in decoder_hidden_list])
+            hidden = stack_dec_hid[0].mul(moe_weights_hidden).sum(0).unsqueeze(0)
+            hidden = gamma_expert * hidden[0] + (1-gamma_expert) * chair_dec_hid[0]
+
         return output, hidden # output[B, V] -- [2, 400] ; hidden[1, B, H] -- [1, 2, 5]
 
     def tokenMoE(self, decoder_input, decoder_hidden, encoder_outputs, mask_tensor):
@@ -380,7 +397,10 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # count = 0
         for mask in mask_tensor: # each intent has a mask [Batch, 1]
             decoder_input_k = decoder_input.clone().masked_fill_(mask, value=PAD_model) # if assigned PAD_token it will count loss
-            decoder_hidden_k = tuple(map(lambda x: x.clone().masked_fill_(mask, value=PAD_model), decoder_hidden))
+            if isinstance(decoder_hidden, tuple):
+                decoder_hidden_k = tuple(map(lambda x: x.clone().masked_fill_(mask, value=PAD_model), decoder_hidden))
+            else:
+                decoder_hidden_k =  decoder_hidden.clone().masked_fill_(mask, value=PAD_model)
             encoder_outputs_k = encoder_outputs.clone().masked_fill_(mask, value=PAD_model)
             # test if there's someone not all PADDED
             # if torch.min(decoder_input_k)!=PAD_token or torch.min(decoder_hidden_k[0])!=PAD_token or torch.min(decoder_hidden_k[1])!=PAD_token or torch.min(encoder_outputs_k)!=PAD_token:

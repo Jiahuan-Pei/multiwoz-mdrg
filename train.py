@@ -162,10 +162,11 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
     # Valid_Scores, Test_Scores = [], []
     Scores = []
     val_dials_gens, test_dials_gens = [], []
+    origin = args.SentMoE # original flag
     for epoch in range(1, n_epochs + 1):
         # pp added
-        if args.SentMoE:
-            args.SentMoE = False if epoch<=10 else True
+        if origin:
+            args.SentMoE = True if epoch > 10 else False
         print('%s\nEpoch=%s (%s %%)' % ('~'*50, epoch, epoch / n_epochs * 100))
         print_loss_total = 0; print_grad_total = 0; print_act_total = 0  # Reset every print_every
         start_time = datetime.datetime.now()
