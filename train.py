@@ -67,7 +67,7 @@ train_arg.add_argument('--dropout', type=float, default=0.0)
 train_arg.add_argument('--early_stop_count', type=int, default=2)
 train_arg.add_argument('--epoch_load', type=int, default=0)
 train_arg.add_argument('--load_param', type=util.str2bool, nargs='?', const=True, default=False)
-
+train_arg.add_argument('--start_epoch', type=int, default=0) # when to use SentMoE
 
 # 4. MISC
 misc_arg = parser.add_argument_group('MISC')
@@ -166,7 +166,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
     for epoch in range(1, n_epochs + 1):
         # pp added
         if origin:
-            args.SentMoE = True if epoch > 10 else False
+            args.SentMoE = True if epoch > args.start_epoch else False
         print('%s\nEpoch=%s (%s %%)' % ('~'*50, epoch, epoch / n_epochs * 100))
         print_loss_total = 0; print_grad_total = 0; print_act_total = 0  # Reset every print_every
         start_time = datetime.datetime.now()

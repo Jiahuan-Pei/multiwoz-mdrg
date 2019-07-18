@@ -13,10 +13,10 @@ class DefaultPolicy(nn.Module):
         self.W_db = nn.Linear(db_size, hidden_size_pol, bias=False)
 
     def forward(self, encodings, db_tensor, bs_tensor, num_directions=1, act_tensor=None):
-        if isinstance(encodings, tuple): # lstm
+        if isinstance(encodings, tuple):
             if num_directions == 2: # bilstm
                 hidden = encodings[0][0]
-            else:
+            else: # lstm
                 hidden = encodings[0]
         else:
             hidden = encodings

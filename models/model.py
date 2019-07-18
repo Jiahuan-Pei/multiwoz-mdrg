@@ -384,7 +384,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
             stack_dec_hid = torch.stack([a.squeeze(0) for a in decoder_hidden_list])
             hidden = stack_dec_hid[0].mul(moe_weights_hidden).sum(0).unsqueeze(0)
             hidden = gamma_expert * hidden[0] + (1-gamma_expert) * chair_dec_hid[0]
-
+            hidden = hidden.unsqueeze(0)
+            # print('hidden=', hidden.size())
         return output, hidden # output[B, V] -- [2, 400] ; hidden[1, B, H] -- [1, 2, 5]
 
     def tokenMoE(self, decoder_input, decoder_hidden, encoder_outputs, mask_tensor):
@@ -435,6 +436,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         max_len = encoder_outputs.size(1)
         h_t0 = h_t.transpose(0, 1)  # [1,B,D] -> [B,1,D]
         h_t = h_t0.repeat(1, max_len, 1)  # [B,1,D]  -> [B,T,D]
+        # print(h_t.size())
         energy = self.attn(torch.cat((h_t, encoder_outputs), 2))  # [B,T,2D] -> [B,T,D]
         energy = torch.tanh(energy)
         energy = energy.transpose(2, 1)  # [B,H,T]
@@ -471,12 +473,19 @@ class MoESeqAttnDecoderRNN(nn.Module):
 
 
     def prospectiveMoE(self, decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future):
+        # count = 1
+        # print('count=', count)
         output_c, hidden_c, embedded_c = self.pros_expert_forward(decoder_input, decoder_hidden,encoder_outputs, dec_hidd_with_future)
         decoder_output_list, decoder_hidden_list, embedded_list = [output_c], [hidden_c], [embedded_c]
 
         for mask in mask_tensor:  # each intent has a mask [Batch, 1]
+            # count += 1
+            # print('count=', count)
             decoder_input_k = decoder_input.clone().masked_fill_(mask, value=PAD_model)  # if assigned PAD_token it will count loss
-            decoder_hidden_k = tuple(map(lambda x: x.clone().masked_fill_(mask, value=PAD_model), decoder_hidden))
+            if isinstance(decoder_hidden, tuple):
+                decoder_hidden_k = tuple(map(lambda x: x.clone().masked_fill_(mask, value=PAD_model), decoder_hidden))
+            else:
+                decoder_hidden_k = decoder_hidden.clone().masked_fill_(mask, value=PAD_model)
             encoder_outputs_k = encoder_outputs.clone().masked_fill_(mask, value=PAD_model)
             dec_hidd_with_future_k = dec_hidd_with_future.clone().masked_fill_(mask, value=PAD_model)
             output_k, hidden_k, embedded_k = self.pros_expert_forward(decoder_input_k, decoder_hidden_k, encoder_outputs_k, dec_hidd_with_future_k)
@@ -652,7 +661,7 @@ class Model(nn.Module):
         elif self.args.optim == 'adam':
             self.optimizer = optim.Adam(lr=self.args.lr_rate, params=filter(lambda x: x.requires_grad, self.parameters()), weight_decay=self.args.l2_norm)
 
-    def retro_forward(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None): # pp added: acts_list
+    def retro_forward(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None, if_detach=False): # pp added: acts_list
         """Given the user sentence, user belief state and database pointer,
         encode the sentence, decide what policy vector construct and
         feed it as the first hiddent state to the decoder.
@@ -668,12 +677,16 @@ class Model(nn.Module):
         # ENCODER
         encoder_outputs, encoder_hidden = self.encoder(input_tensor, input_lengths) # encoder_outputs: tensor(maxlen_input, batch, 150); encoder_hidden: tuple, each element is a tensor: [1, batch, 150]
 
+        # pp added: extract forward output of encoder if use SentMoE and 2 directions
+        if self.num_directions == 2 and self.args.SentMoE:
+            if isinstance(encoder_hidden, tuple):
+                encoder_hidden = encoder_hidden[0][0].unsqueeze(0), encoder_hidden[1][0].unsqueeze(0)
+            else:
+                encoder_hidden = encoder_hidden[0].unsqueeze(0)
+
         # POLICY
         decoder_hidden = self.policy(encoder_hidden, db_tensor, bs_tensor, self.num_directions) # decoder_hidden: tuple, each element is a tensor: [1, batch, 150]
-
-        # # pp added
-        # if self.args.cell_type == 'bilstm':
-        #     decoder_hidden = decoder_hidden[0]
+        # print('decoder_hidden', decoder_hidden.size())
         # GENERATOR
         # Teacher forcing: Feed the target as the next input
         _, target_len = target_tensor.size()
@@ -712,27 +725,40 @@ class Model(nn.Module):
         # pp added: GENERATION
         # decoded_sent = self.decode(target_tensor, decoder_hidden, encoder_outputs, mask_tensor)
 
-        return proba, hidd.detach(), decoded_sent
+        if if_detach:
+            proba, hidd = proba.detach(), hidd.detach()
+        return proba, hidd, decoded_sent
 
     def forward(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None):  # pp added: acts_list
-        proba, hidd, decoded_sent = self.retro_forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor,mask_tensor)
+        proba_r, hidd, decoded_sent = self.retro_forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor,mask_tensor, if_detach=self.args.SentMoE)
 
         # if we consider sentence info
         if self.args.SentMoE:
+            target_length = target_tensor.size(1)
+
             # for fixed encoding this is zero so it does not contribute
             batch_size, seq_len = input_tensor.size()
 
             # ENCODER
             encoder_outputs, encoder_hidden = self.encoder(input_tensor, input_lengths)  # encoder_outputs: tensor(maxlen_input, batch, 150); encoder_hidden: tuple, each element is a tensor: [1, batch, 150]
 
+            # pp added: extract backward output of encoder
+            if self.num_directions == 2:
+                if isinstance(encoder_hidden, tuple):
+                    encoder_hidden = encoder_hidden[0][1].unsqueeze(0), encoder_hidden[1][1].unsqueeze(0)
+                else:
+                    encoder_hidden = encoder_hidden[1].unsqueeze(0)
+
             # POLICY
             decoder_hidden = self.policy(encoder_hidden, db_tensor, bs_tensor, self.num_directions)  # decoder_hidden: tuple, each element is a tensor: [1, batch, 150]
+            # print('decoder_hidden', decoder_hidden.size())
 
             # GENERATOR
             # Teacher forcing: Feed the target as the next input
             _, target_len = target_tensor.size()
 
             decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long, device=self.device)  # tensor[batch, 1]
+            proba_p = torch.zeros(batch_size, target_length, self.vocab_size, device=self.device)  # tensor[Batch, maxlen_target, V]
 
             # generate target sequence step by step !!!
             for t in range(target_len):
@@ -748,10 +774,11 @@ class Model(nn.Module):
                     # decoder_input = topi.squeeze().detach()  # detach from history as input
                     decoder_input = topi.detach()  # detach from history as input
 
-                proba[:, t, :] = decoder_output  # decoder_output[Batch, TargetVocab]
+                proba_p[:, t, :] = decoder_output  # decoder_output[Batch, TargetVocab]
 
-        return proba, None, decoded_sent
-
+            return proba_p, None, decoded_sent
+        else:
+            return proba_r, None, decoded_sent
 
     def predict(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None):
         # pp added
