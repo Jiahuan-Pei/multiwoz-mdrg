@@ -37,6 +37,7 @@ data_arg = parser.add_argument_group(title='Data')
 data_arg.add_argument('--data_dir', type=str, default='data/multi-woz', help='the root directory of data')
 data_arg.add_argument('--log_dir', type=str, default='logs')
 data_arg.add_argument('--result_dir', type=str, default='results/bsl')
+data_arg.add_argument('--pre_model_dir', type=str, default='results/moe4_gru-27062/model')
 data_arg.add_argument('--model_name', type=str, default='translate.ckpt')
 
 # 2.Network
@@ -102,7 +103,7 @@ new_arg.add_argument('--lambda_expert', type=float, default=0.5) # use xx percen
 new_arg.add_argument('--mu_expert', type=float, default=0.5) # use xx percent of training data
 new_arg.add_argument('--gamma_expert', type=float, default=0.5) # use xx percent of training data
 new_arg.add_argument('--SentMoE', type=util.str2bool, nargs='?', const=True, default=False, help='if True use sentence info')
-# new_arg.add_argument('--job_id', type=str, default='default_job_id') # use xx percent of training data
+new_arg.add_argument('--if_detach', type=util.str2bool, nargs='?', const=True, default=False) # if detach expert parts
 
 args = parser.parse_args()
 args.device = detected_device.type
@@ -166,7 +167,11 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
     for epoch in range(1, n_epochs + 1):
         # pp added
         if origin:
-            args.SentMoE = True if epoch > args.start_epoch else False
+            if epoch > args.start_epoch:
+                args.SentMoE = True
+                print('BeginSentMOE', '-'*50)
+            else:
+                args.SentMoE = False
         print('%s\nEpoch=%s (%s %%)' % ('~'*50, epoch, epoch / n_epochs * 100))
         print_loss_total = 0; print_grad_total = 0; print_act_total = 0  # Reset every print_every
         start_time = datetime.datetime.now()
@@ -290,6 +295,12 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
             Test_Score = evaluator.summarize_report(test_dials_gen, mode='Test')
             # Test_Score = evaluateModel(test_dials_gen, test_dials, delex_path, mode='Test')
             test_dials_gens.append(test_dials_gen)
+
+            try:
+                with open(args.decode_output + 'test_dials_gen_%s.json' % epoch, 'w') as outfile:
+                    json.dump(test_dials_gen, outfile, indent=4)
+            except:
+                print('json.dump.err.test')
 
         model.train()
         # pp added: evaluation - Plan B

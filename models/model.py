@@ -577,6 +577,7 @@ class Model(nn.Module):
         self.device = device
 
         self.model_dir = args.model_dir
+        self.pre_model_dir = args.pre_model_dir
         self.model_name = args.model_name
         self.teacher_forcing_ratio = args.teacher_ratio
         self.vocab_size = args.vocab_size
@@ -669,7 +670,7 @@ class Model(nn.Module):
         target_tensor: tensor(batch, maxlen_target)
         """
 
-        target_length = target_tensor.size(1)
+        target_length = target_tensor.size(1) if target_tensor is not None else 40
 
         # for fixed encoding this is zero so it does not contribute
         batch_size, seq_len = input_tensor.size()
@@ -689,7 +690,7 @@ class Model(nn.Module):
         # print('decoder_hidden', decoder_hidden.size())
         # GENERATOR
         # Teacher forcing: Feed the target as the next input
-        _, target_len = target_tensor.size()
+        # _, target_len = target_tensor.size()
 
         decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long, device=self.device) # tensor[batch, 1]
         # decoder_input = torch.LongTensor([[SOS_token] for _ in range(batch_size)], device=self.device)
@@ -699,13 +700,13 @@ class Model(nn.Module):
         hidd = torch.zeros(batch_size, target_length, self.hid_size_dec, device=self.device)
 
         # generate target sequence step by step !!!
-        for t in range(target_len):
+        for t in range(target_length):
             # pp added: moe chair
             decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor) # decoder_output; decoder_hidden
 
             # use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False # pp added: self.args.SentMoE is False
-            use_teacher_forcing = True if random.random() < self.args.teacher_ratio and self.args.SentMoE is False else False # pp added: self.args.SentMoE is False
-            if use_teacher_forcing: # if use SentMoE, we should stop teacher forcing for experts
+            # use_teacher_forcing = True if random.random() < self.args.teacher_ratio and self.args.SentMoE is False else False # pp added: self.args.SentMoE is False
+            if target_tensor is not None: # if use SentMoE, we should stop teacher forcing for experts
                 decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
             else:
                 # Without teacher forcing: use its own predictions as the next input
@@ -730,10 +731,11 @@ class Model(nn.Module):
         return proba, hidd, decoded_sent
 
     def forward(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None):  # pp added: acts_list
-        proba_r, hidd, decoded_sent = self.retro_forward(input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor,mask_tensor, if_detach=self.args.SentMoE)
 
         # if we consider sentence info
         if self.args.SentMoE:
+            proba_r, hidd, decoded_sent = self.retro_forward(input_tensor, input_lengths, None, None, db_tensor,
+                                                             bs_tensor, mask_tensor, if_detach=self.args.if_detach)
             target_length = target_tensor.size(1)
 
             # for fixed encoding this is zero so it does not contribute
@@ -765,19 +767,24 @@ class Model(nn.Module):
                 # pp added: moe chair
                 decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
 
-                use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False
-                if use_teacher_forcing:
-                    decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
-                else:
-                    # Without teacher forcing: use its own predictions as the next input
-                    topv, topi = decoder_output.topk(1)
-                    # decoder_input = topi.squeeze().detach()  # detach from history as input
-                    decoder_input = topi.detach()  # detach from history as input
+                decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
+                # use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False
+                # if use_teacher_forcing:
+                #     decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
+                # else:
+                #     # Without teacher forcing: use its own predictions as the next input
+                #     topv, topi = decoder_output.topk(1)
+                #     # decoder_input = topi.squeeze().detach()  # detach from history as input
+                #     decoder_input = topi.detach()  # detach from history as input
 
                 proba_p[:, t, :] = decoder_output  # decoder_output[Batch, TargetVocab]
 
             return proba_p, None, decoded_sent
         else:
+            # print('pretrain')
+            proba_r, hidd, decoded_sent = self.retro_forward(input_tensor, input_lengths, target_tensor, target_lengths,
+                                                             db_tensor, bs_tensor, mask_tensor,
+                                                             if_detach=self.args.if_detach)
             return proba_r, None, decoded_sent
 
     def predict(self, input_tensor, input_lengths, target_tensor, target_lengths, db_tensor, bs_tensor, mask_tensor=None):
@@ -940,9 +947,9 @@ class Model(nn.Module):
 
     def loadModel(self, iter=0):
         print('Loading parameters of iter %s ' % iter)
-        self.encoder.load_state_dict(torch.load(self.model_dir + self.model_name + '-' + str(iter) + '.enc'))
-        self.policy.load_state_dict(torch.load(self.model_dir + self.model_name + '-' + str(iter) + '.pol'))
-        self.decoder.load_state_dict(torch.load(self.model_dir + self.model_name + '-' + str(iter) + '.dec'))
+        self.encoder.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.enc'))
+        self.policy.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.pol'))
+        self.decoder.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.dec'))
 
     def input_index2word(self, index):
         if index in self.input_lang_index2word:
