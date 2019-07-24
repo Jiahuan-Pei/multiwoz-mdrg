@@ -368,10 +368,14 @@ if __name__ == '__main__':
     model = Model(args, input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index, intent2index, index2intent)
     # models = nn.DataParallel(models, device_ids=[0,1]) # latter for parallel
     model = model.to(detected_device)
+
     if args.load_param:
         model.loadModel(args.epoch_load)
 
+
     evaluator = MultiWozEvaluator('MultiWozEvaluator', delex_path=args.delex_path)
+
+    # Test_Score = evaluator.summarize_report(test_dials_gen, mode='Test')
 
     trainIters(model, intent2index, n_epochs=args.max_epochs, args=args)
 

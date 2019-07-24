@@ -681,7 +681,9 @@ class Model(nn.Module):
         # pp added: extract forward output of encoder if use SentMoE and 2 directions
         if self.num_directions == 2 and self.args.SentMoE:
             if isinstance(encoder_hidden, tuple):
+                # pp added: forward or backward
                 encoder_hidden = encoder_hidden[0][0].unsqueeze(0), encoder_hidden[1][0].unsqueeze(0)
+                # encoder_hidden = encoder_hidden[0][1].unsqueeze(0), encoder_hidden[1][1].unsqueeze(0)
             else:
                 encoder_hidden = encoder_hidden[0].unsqueeze(0)
 
@@ -747,7 +749,9 @@ class Model(nn.Module):
             # pp added: extract backward output of encoder
             if self.num_directions == 2:
                 if isinstance(encoder_hidden, tuple):
+                    # pp added: forward or backward
                     encoder_hidden = encoder_hidden[0][1].unsqueeze(0), encoder_hidden[1][1].unsqueeze(0)
+                    # encoder_hidden = encoder_hidden[0][0].unsqueeze(0), encoder_hidden[1][0].unsqueeze(0)
                 else:
                     encoder_hidden = encoder_hidden[1].unsqueeze(0)
 
@@ -938,11 +942,11 @@ class Model(nn.Module):
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
 
-        torch.save(self.encoder.state_dict(), self.model_dir + self.model_name + '-' + str(iter) + '.enc')
-        torch.save(self.policy.state_dict(), self.model_dir + self.model_name + '-' + str(iter) + '.pol')
-        torch.save(self.decoder.state_dict(), self.model_dir + self.model_name + '-' + str(iter) + '.dec')
+        torch.save(self.encoder.state_dict(), self.model_dir + '/' + self.model_name + '-' + str(iter) + '.enc')
+        torch.save(self.policy.state_dict(), self.model_dir + '/'  + self.model_name + '-' + str(iter) + '.pol')
+        torch.save(self.decoder.state_dict(), self.model_dir + '/' + self.model_name + '-' + str(iter) + '.dec')
 
-        with open(self.model_dir + self.model_name + '.config', 'w') as f:
+        with open(self.model_dir + '/' + self.model_name + '.config', 'w') as f:
             json.dump(vars(self.args), f, ensure_ascii=False, indent=4)
 
     def loadModel(self, iter=0):

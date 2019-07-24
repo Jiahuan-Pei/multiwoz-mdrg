@@ -27,13 +27,28 @@ colormap = bmap.mpl_colors
 import seaborn as sns
 
 from scipy.interpolate import spline, interp1d
+from scipy.stats import entropy
+from itertools import combinations
 
 from nltk.corpus import stopwords
 stopwords.words('english')
 from string import punctuation, capwords
 punctuations = list(punctuation)
 
-def loadData(data_dir='data',intent_type='domain'):
+# Kullback-Leibler divergence
+def KL(p, q):
+    return entropy(p, q)
+
+# Average KL
+def AKL(expert_prob_list):
+    epsilon = 10e-2
+    KL_list = []
+    for pi, pj in combinations([[np.float(e)+epsilon for e in l] for l in expert_prob_list], 2): # c_n^2
+        # KL_list.append(np.square(entropy(pi, pj)))
+        KL_list.append(entropy(pi, pj))
+    return np.mean(KL_list)
+
+def loadData(data_dir='data/multi-woz',intent_type='domain', plot_flag=False):
     input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = util.loadDictionaries(mdir=data_dir)
     # pp added: load intents
     intent2index, index2intent = util.loadIntentDictionaries(intent_type=intent_type, intent_file='{}/intents.json'.format(data_dir)) if intent_type else (None, None)
@@ -44,13 +59,19 @@ def loadData(data_dir='data',intent_type='domain'):
         # print train_dials
 
     intent_text = {}
-    for name, dial in train_dials.items():
-        for intent, sys, acts in zip(intent2index.keys(), dial['sys'], dial['acts']):
-            if intent in ' '.join(acts):
-                if intent not in intent_text:
-                    intent_text[intent] = sys
+    for name, dial in train_dials.items(): # dial
+        for sys, acts in zip(dial['sys'], dial['acts']): # turn
+            for intent in intent2index.keys():
+                if intent in ' '.join(acts):
+                    if intent not in intent_text:
+                        intent_text[intent] = sys
+                    else:
+                        intent_text[intent] += ' ' + sys
                 else:
-                    intent_text[intent] += ' ' + sys
+                    pass
+                    # if intent == 'Hotel-Request':
+                    #     print('00000')
+                    #     print('NULL')
 
     labels = []
     output_vocab_len = 400
@@ -66,7 +87,9 @@ def loadData(data_dir='data',intent_type='domain'):
         'Train': (30, 10, 0, 150),
         'general': (-40, 10, 20, -50)
     }
+
     tmp = []
+    distributions = []
     for i in range(len(index2intent.keys())):
         intent = index2intent[i]
         labels.append(capwords(intent))
@@ -76,8 +99,11 @@ def loadData(data_dir='data',intent_type='domain'):
         rm_words = stopwords.words() + punctuations + specials  # we filter these words
         for word in rm_words:
             del target_dict_k[word]
-        print intent, ':::', target_dict_k
+        print(intent, ':::', target_dict_k)
         y = [target_dict_k[output_lang_index2word['%s' % ii]] for ii in x]
+
+        # print('Expert_i_probs_list=', y)
+        distributions.append(y)
 
         # smooth curves
         xnew = np.linspace(x.min(), x.max(), 400)
@@ -87,30 +113,36 @@ def loadData(data_dir='data',intent_type='domain'):
         # func = interp1d(x, y, kind='nearest') # cubic
         # y = func(xnew)
         tmp.append(y)
-        l_k, = plt.plot(x, y, color=colormap[i + 2], label=intent)
-        lines.append(l_k)
-        # show top-n
-        N = 1
-        for j in np.arange(N):
-            k_max, v_max = target_dict_k.most_common()[j]
-            max_indx = output_lang_word2index[k_max]
-            plt.annotate('[%s]' % (re.sub(r'\[|\]', '', k_max)),
-                         xytext=(max_indx + shift[intent][0], v_max + shift[intent][1]), xy=(max_indx, v_max),
-                         color=colormap[i + 2], fontsize='xx-large',
-                         arrowprops=dict(facecolor='black',
-                                         arrowstyle="simple",
-                                         connectionstyle="arc3,rad=-0.1"))
-        # show lowest-n
-        start = 10
-        for j in np.arange(start, N + start):
-            k_min, v_min = target_dict_k.most_common()[-j]
-            min_indx = output_lang_word2index[k_min]
-            plt.annotate('(%s)' % (re.sub(r'\[|\]', '', k_min)),
-                         xytext=(min_indx + +shift[intent][2], v_min + shift[intent][3]), xy=(min_indx, v_min),
-                         color=colormap[i + 2], fontsize='xx-large',
-                         arrowprops=dict(facecolor='blue',
-                                         arrowstyle="simple",
-                                         connectionstyle="arc3,rad=-0.1"), )
+        if plot_flag:
+            l_k, = plt.plot(x, y, color=colormap[i + 2], label=intent)
+            lines.append(l_k)
+            # show top-n
+            N = 1
+            for j in np.arange(N):
+                k_max, v_max = target_dict_k.most_common()[j]
+                max_indx = output_lang_word2index[k_max]
+                plt.annotate('[%s]' % (re.sub(r'\[|\]', '', k_max)),
+                             # xytext=(max_indx + shift[intent][0], v_max + shift[intent][1]),
+                             xy=(max_indx, v_max),
+                             color=colormap[i + 2], fontsize='xx-large',
+                             arrowprops=dict(facecolor='black',
+                                             arrowstyle="simple",
+                                             connectionstyle="arc3,rad=-0.1"))
+            # show lowest-n
+            start = 10
+            for j in np.arange(start, N + start):
+                k_min, v_min = target_dict_k.most_common()[-j]
+                min_indx = output_lang_word2index[k_min]
+                plt.annotate('(%s)' % (re.sub(r'\[|\]', '', k_min)),
+                             # xytext=(min_indx + +shift[intent][2], v_min + shift[intent][3]),
+                             xy=(min_indx, v_min),
+                             color=colormap[i + 2], fontsize='xx-large',
+                             arrowprops=dict(facecolor='blue',
+                                             arrowstyle="simple",
+                                             connectionstyle="arc3,rad=-0.1"), )
+
+    # print(distributions)
+    print(intent_type, '=', AKL(distributions))
 
     plt.legend(labels=labels)
     plt.xlabel('Index of a word')
@@ -118,5 +150,8 @@ def loadData(data_dir='data',intent_type='domain'):
     # plt.grid()
     # plt.show()
     plt.savefig('post/Statistic.png')
+
 if __name__ == "__main__":
-    loadData()
+    loadData(intent_type='domain', plot_flag=True)
+    loadData(intent_type='sysact')
+    loadData(intent_type='domain_act')
