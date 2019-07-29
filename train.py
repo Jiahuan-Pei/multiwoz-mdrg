@@ -297,7 +297,7 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
             test_dials_gens.append(test_dials_gen)
 
             try:
-                with open(args.decode_output + 'test_dials_gen_%s.json' % epoch, 'w') as outfile:
+                with open(args.decode_output + '/test_dials_gen_%s.json' % epoch, 'w') as outfile:
                     json.dump(test_dials_gen, outfile, indent=4)
             except:
                 print('json.dump.err.test')
@@ -330,12 +330,12 @@ def trainIters(model, intent2index, n_epochs=10, args=args):
     # save best prediction to json, evaluated on valid set
     best_model_id = np.int(best_df['Epoch']) - 1 # epoch start with 1
     try:
-        with open(args.valid_output + 'val_dials_gen.json', 'w') as outfile:
+        with open(args.valid_output + '/val_dials_gen.json', 'w') as outfile:
             json.dump(val_dials_gens[best_model_id], outfile, indent=4)
     except:
         print('json.dump.err.valid')
     try:
-        with open(args.decode_output + 'test_dials_gen.json', 'w') as outfile:
+        with open(args.decode_output + '/test_dials_gen.json', 'w') as outfile:
             json.dump(test_dials_gens[best_model_id], outfile, indent=4)
     except:
         print('json.dump.err.test')
