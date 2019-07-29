@@ -441,7 +441,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # print('h_t.size=', h_t.size())
         # print('encoder_outputs.size=', encoder_outputs.size())
         # print('dec_hidd_with_future.T.size=', dec_hidd_with_future[:max_len].transpose(0, 1).size())
-        energy = self.attn3(torch.cat((h_t, encoder_outputs, dec_hidd_with_future[:max_len].transpose(0, 1)), 2))  # [B,T,2D] -> [B,T,D]
+        energy = self.attn(torch.cat((h_t, encoder_outputs), 2))  # [B,T,2D] -> [B,T,D]
         energy = torch.tanh(energy)
         energy = energy.transpose(2, 1)  # [B,H,T]
         v = self.v.repeat(encoder_outputs.size(0), 1).unsqueeze(1)  # [B,1,H]
@@ -452,22 +452,20 @@ class MoESeqAttnDecoderRNN(nn.Module):
         context = torch.bmm(attn_weights, encoder_outputs)  # [B,1,H]
 
         # pp aaded:compute future context use attention on output of decoder
-        # dec_hidd_with_future = dec_hidd_with_future.transpose(0, 1)
-        # max_len_target = dec_hidd_with_future.size(1)
-        # h_t_f = h_t0.repeat(1, max_len_target, 1)
-        # energy_f = self.attn2(torch.cat((h_t_f, dec_hidd_with_future), 2))
-        # energy_f = torch.tanh(energy_f)
-        # energy_f = energy_f.transpose(2, 1)  # [B,H,T]
-        # v_f = self.v.repeat(dec_hidd_with_future.size(0), 1).unsqueeze(1)  # [B,1,H]
-        # energy_f = torch.bmm(v_f, energy_f)
-        # attn_weights_f = F.softmax(energy_f, dim=2)
-        # context_f = torch.bmm(attn_weights_f, dec_hidd_with_future) # [B,1,H]
+        dec_hidd_with_future = dec_hidd_with_future.transpose(0, 1)
+        max_len_target = dec_hidd_with_future.size(1)
+        h_t_f = h_t0.repeat(1, max_len_target, 1)
+        energy_f = self.attn(torch.cat((h_t_f, dec_hidd_with_future), 2))
+        energy_f = torch.tanh(energy_f)
+        energy_f = energy_f.transpose(2, 1)  # [B,H,T]
+        v_f = self.v.repeat(dec_hidd_with_future.size(0), 1).unsqueeze(1)  # [B,1,H]
+        energy_f = torch.bmm(v_f, energy_f)
+        attn_weights_f = F.softmax(energy_f, dim=2)
+        context_f = torch.bmm(attn_weights_f, dec_hidd_with_future) # [B,1,H]
         # context_f = dec_hidd_with_future
 
-
-
         # Combine embedded input word and attended context, run through RNN
-        rnn_input = torch.cat((embedded, context), 2)
+        rnn_input = torch.cat((embedded, context.add(context_f)), 2)
         # rnn_input = torch.cat((embedded, context, context_f), 2)
         rnn_input = rnn_input.transpose(0, 1)
         output, hidden = self.rnn(rnn_input, hidden)
@@ -775,8 +773,8 @@ class Model(nn.Module):
             # generate target sequence step by step !!!
             for t in range(target_len):
                 # pp added: moe chair
-                # decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
-                decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=proba_r.transpose(0, 1))  # decoder_output; decoder_hidden
+                decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
+                # decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=proba_r.transpose(0, 1))  # decoder_output; decoder_hidden
 
                 decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
                 # use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False
