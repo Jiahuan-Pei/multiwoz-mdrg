@@ -276,7 +276,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         if 'bi' in cell_type:  # we dont need bidirectionality in decoding
             cell_type = cell_type.strip('bi')
         self.rnn = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p)
-        self.rnn_f = whatCellType(embedding_size + hidden_size*2, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
+        self.rnn_f = whatCellType(embedding_size + hidden_size + output_size, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
         # self.moe_fc = nn.Linear((output_size+hidden_size)*(self.k+1), (self.k+1))
@@ -290,6 +290,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # attention
         self.method = 'concat'
         self.attn = nn.Linear(self.hidden_size * 2, hidden_size)
+        self.attn2 = nn.Linear(self.hidden_size + self.output_size, hidden_size)
         self.v = nn.Parameter(torch.rand(hidden_size))
         stdv = 1. / math.sqrt(self.v.size(0))
         self.v.data.normal_(mean=0, std=stdv)
@@ -451,7 +452,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         dec_hidd_with_future = dec_hidd_with_future.transpose(0, 1)
         max_len_target = dec_hidd_with_future.size(1)
         h_t_f = h_t0.repeat(1, max_len_target, 1)
-        energy_f = self.attn(torch.cat((h_t_f, dec_hidd_with_future), 2))
+        energy_f = self.attn2(torch.cat((h_t_f, dec_hidd_with_future), 2))
         energy_f = torch.tanh(energy_f)
         energy_f = energy_f.transpose(2, 1)  # [B,H,T]
         v_f = self.v.repeat(dec_hidd_with_future.size(0), 1).unsqueeze(1)  # [B,1,H]
@@ -769,7 +770,8 @@ class Model(nn.Module):
             # generate target sequence step by step !!!
             for t in range(target_len):
                 # pp added: moe chair
-                decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
+                # decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
+                decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=proba_r.transpose(0, 1))  # decoder_output; decoder_hidden
 
                 decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
                 # use_teacher_forcing = True if random.random() < self.args.teacher_ratio else False
