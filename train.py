@@ -380,5 +380,5 @@ if __name__ == '__main__':
     trainIters(model, intent2index, n_epochs=args.max_epochs, args=args)
 
     all_end_time = datetime.datetime.now()
-    print('End time={}'.format(all_start_time.strftime("%Y-%m-%d %H:%M:%S")))
+    print('End time={}'.format(all_end_time.strftime("%Y-%m-%d %H:%M:%S")))
     print('Use time={} seconds'.format((all_end_time-all_start_time).seconds))

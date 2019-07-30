@@ -1005,3 +1005,4 @@ class Model(nn.Module):
         learnable_parameters = filter(lambda p: p.requires_grad, self.parameters())
         for idx, param in enumerate(learnable_parameters):
             print(param.grad, param.shape)
+
