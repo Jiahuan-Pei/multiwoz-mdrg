@@ -276,7 +276,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         if 'bi' in cell_type:  # we dont need bidirectionality in decoding
             cell_type = cell_type.strip('bi')
         self.rnn = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p)
-        self.rnn_f = whatCellType(embedding_size + hidden_size + output_size, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
+        self.rnn_f = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
         # self.moe_fc = nn.Linear((output_size+hidden_size)*(self.k+1), (self.k+1))
@@ -290,8 +290,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # attention
         self.method = 'concat'
         self.attn = nn.Linear(self.hidden_size * 2, hidden_size)
-        self.attn3 = nn.Linear(self.hidden_size * 2 + self.output_size, hidden_size)
-        self.attn2 = nn.Linear(self.hidden_size + self.output_size, hidden_size)
+        self.attn_f = nn.Linear(self.hidden_size * 2 + self.hidden_size, hidden_size)
         self.v = nn.Parameter(torch.rand(hidden_size))
         stdv = 1. / math.sqrt(self.v.size(0))
         self.v.data.normal_(mean=0, std=stdv)
@@ -438,10 +437,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
         max_len = encoder_outputs.size(1)
         h_t0 = h_t.transpose(0, 1)  # [1,B,D] -> [B,1,D]
         h_t = h_t0.repeat(1, max_len, 1)  # [B,1,D]  -> [B,T,D]
-        # print('h_t.size=', h_t.size())
-        # print('encoder_outputs.size=', encoder_outputs.size())
-        # print('dec_hidd_with_future.T.size=', dec_hidd_with_future[:max_len].transpose(0, 1).size())
-        energy = self.attn(torch.cat((h_t, encoder_outputs), 2))  # [B,T,2D] -> [B,T,D]
+        # pp added: new attn
+        energy = self.attn_f(torch.cat((h_t, encoder_outputs, dec_hidd_with_future[:max_len].transpose(0, 1)), 2))  # [B,T,2D] -> [B,T,D]
         energy = torch.tanh(energy)
         energy = energy.transpose(2, 1)  # [B,H,T]
         v = self.v.repeat(encoder_outputs.size(0), 1).unsqueeze(1)  # [B,1,H]
@@ -451,22 +448,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # getting context
         context = torch.bmm(attn_weights, encoder_outputs)  # [B,1,H]
 
-        # pp aaded:compute future context use attention on output of decoder
-        dec_hidd_with_future = dec_hidd_with_future.transpose(0, 1)
-        max_len_target = dec_hidd_with_future.size(1)
-        h_t_f = h_t0.repeat(1, max_len_target, 1)
-        energy_f = self.attn(torch.cat((h_t_f, dec_hidd_with_future), 2))
-        energy_f = torch.tanh(energy_f)
-        energy_f = energy_f.transpose(2, 1)  # [B,H,T]
-        v_f = self.v.repeat(dec_hidd_with_future.size(0), 1).unsqueeze(1)  # [B,1,H]
-        energy_f = torch.bmm(v_f, energy_f)
-        attn_weights_f = F.softmax(energy_f, dim=2)
-        context_f = torch.bmm(attn_weights_f, dec_hidd_with_future) # [B,1,H]
-        # context_f = dec_hidd_with_future
-
         # Combine embedded input word and attended context, run through RNN
-        rnn_input = torch.cat((embedded, context.add(context_f)), 2)
-        # rnn_input = torch.cat((embedded, context, context_f), 2)
+        rnn_input = torch.cat((embedded, context), 2)
         rnn_input = rnn_input.transpose(0, 1)
         output, hidden = self.rnn(rnn_input, hidden)
         # output, hidden = self.rnn_f(rnn_input, hidden)
@@ -674,7 +657,7 @@ class Model(nn.Module):
         target_tensor: tensor(batch, maxlen_target)
         """
 
-        target_length = target_tensor.size(1) if target_tensor is not None else 50
+        target_length = target_tensor.size(1) if target_tensor is not None else self.args.max_len
 
         # for fixed encoding this is zero so it does not contribute
         batch_size, seq_len = input_tensor.size()
