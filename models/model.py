@@ -943,7 +943,7 @@ class Model(nn.Module):
         with open(self.model_dir + '/' + self.model_name + '.config', 'w') as f:
             json.dump(vars(self.args), f, ensure_ascii=False, indent=4)
 
-    # pp added: partly load parameters for pretrain
+    # pp added: partly load parameters
     def loadPartofParas(self, submodel, para_path):
         pretrained_dict = torch.load(para_path)
         cur_model_dict = submodel.state_dict()
