@@ -268,6 +268,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
         self.k = k
         self.device = device
         self.args = args
+        # pp added: future info size
+        self.future_size = self.output_size if self.args.future_info == 'proba' else self.hidden_size
 
         # Define layers
         self.embedding = nn.Embedding(output_size, embedding_size)
@@ -277,7 +279,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
             cell_type = cell_type.strip('bi')
         self.rnn = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p)
         self.rnn_f = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
-        # self.rnn_f = whatCellType(embedding_size + hidden_size + output_size, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
+        # self.rnn_fp = whatCellType(embedding_size + hidden_size + output_size, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
 
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
@@ -292,7 +294,9 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # attention
         self.method = 'concat'
         self.attn = nn.Linear(self.hidden_size * 2, hidden_size)
-        self.attn_f = nn.Linear(self.hidden_size * 2 + self.output_size, hidden_size)
+
+        # self.attn_fp = nn.Linear(self.hidden_size * 2 + self.output_size, hidden_size)
+        self.attn_f = nn.Linear(self.hidden_size * 2 + self.future_size, hidden_size)
         self.v = nn.Parameter(torch.rand(hidden_size))
         stdv = 1. / math.sqrt(self.v.size(0))
         self.v.data.normal_(mean=0, std=stdv)
@@ -440,9 +444,6 @@ class MoESeqAttnDecoderRNN(nn.Module):
         h_t0 = h_t.transpose(0, 1)  # [1,B,D] -> [B,1,D]
         h_t = h_t0.repeat(1, max_len, 1)  # [B,1,D]  -> [B,T,D]
 
-        # print('h_t.size=', h_t.size())
-        # print('encoder_outputs.size=', encoder_outputs.size())
-        # print('dec_hidd_with_future.T.size=', dec_hidd_with_future[:max_len].transpose(0, 1).size())
         # pp added: new attn
         energy = self.attn_f(torch.cat((h_t, encoder_outputs, dec_hidd_with_future[:max_len].transpose(0, 1)), 2))  # [B,T,2D] -> [B,T,D]
         energy = torch.tanh(energy)
@@ -457,8 +458,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # Combine embedded input word and attended context, run through RNN
         rnn_input = torch.cat((embedded, context), 2)
         rnn_input = rnn_input.transpose(0, 1)
-        # output, hidden = self.rnn(rnn_input, hidden)
-        output, hidden = self.rnn_f(rnn_input, hidden)
+        # pp added: rp_share_rnn
+        output, hidden = self.rnn(rnn_input, hidden) if self.args.rp_share_rnn else self.rnn_f(rnn_input, hidden)
         output = output.squeeze(0)  # (1,B,H)->(B,H)
 
         output = F.log_softmax(self.out(output), dim=1) # self.out(output)[batch, out_vocab]
@@ -759,10 +760,13 @@ class Model(nn.Module):
             decoder_input = torch.as_tensor([[SOS_token] for _ in range(batch_size)], dtype=torch.long, device=self.device)  # tensor[batch, 1]
             proba_p = torch.zeros(batch_size, target_length, self.vocab_size, device=self.device)  # tensor[Batch, maxlen_target, V]
 
+            # pp added
+            future_info = proba_r if self.args.future_info == 'proba' else hidd
+
             # generate target sequence step by step !!!
             for t in range(target_len):
                 # pp added: moe chair
-                decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=hidd.transpose(0, 1))  # decoder_output; decoder_hidden
+                decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=future_info.transpose(0, 1))  # decoder_output; decoder_hidden
                 # decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs, mask_tensor, dec_hidd_with_future=proba_r.transpose(0, 1))  # decoder_output; decoder_hidden
 
                 decoder_input = target_tensor[:, t].view(-1, 1)  # [B,1] Teacher forcing
