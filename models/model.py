@@ -276,7 +276,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
         if 'bi' in cell_type:  # we dont need bidirectionality in decoding
             cell_type = cell_type.strip('bi')
         self.rnn = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p)
-        self.rnn_f = whatCellType(embedding_size + hidden_size + output_size, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
+        self.rnn_f = whatCellType(embedding_size + hidden_size, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
+        # self.rnn_f = whatCellType(embedding_size + hidden_size + output_size, hidden_size, cell_type, dropout_rate=self.dropout_p) # pp added for future context
         self.moe_rnn = whatCellType(hidden_size*(self.k+1), hidden_size*(self.k+1), cell_type, dropout_rate=self.dropout_p)
         self.moe_hidden = nn.Linear(hidden_size * (self.k+1), hidden_size)
         # self.moe_fc = nn.Linear((output_size+hidden_size)*(self.k+1), (self.k+1))
@@ -290,8 +291,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # attention
         self.method = 'concat'
         self.attn = nn.Linear(self.hidden_size * 2, hidden_size)
-        self.attn3 = nn.Linear(self.hidden_size * 2 + self.output_size, hidden_size)
-        self.attn2 = nn.Linear(self.hidden_size + self.output_size, hidden_size)
+        self.attn_f = nn.Linear(self.hidden_size * 2 + self.output_size, hidden_size)
         self.v = nn.Parameter(torch.rand(hidden_size))
         stdv = 1. / math.sqrt(self.v.size(0))
         self.v.data.normal_(mean=0, std=stdv)
@@ -441,7 +441,7 @@ class MoESeqAttnDecoderRNN(nn.Module):
         # print('h_t.size=', h_t.size())
         # print('encoder_outputs.size=', encoder_outputs.size())
         # print('dec_hidd_with_future.T.size=', dec_hidd_with_future[:max_len].transpose(0, 1).size())
-        energy = self.attn3(torch.cat((h_t, encoder_outputs, dec_hidd_with_future[:max_len].transpose(0, 1)), 2))  # [B,T,2D] -> [B,T,D]
+        energy = self.attn_f(torch.cat((h_t, encoder_outputs, dec_hidd_with_future[:max_len].transpose(0, 1)), 2))  # [B,T,2D] -> [B,T,D]
         energy = torch.tanh(energy)
         energy = energy.transpose(2, 1)  # [B,H,T]
         v = self.v.repeat(encoder_outputs.size(0), 1).unsqueeze(1)  # [B,1,H]
@@ -470,8 +470,8 @@ class MoESeqAttnDecoderRNN(nn.Module):
         rnn_input = torch.cat((embedded, context), 2)
         # rnn_input = torch.cat((embedded, context, context_f), 2)
         rnn_input = rnn_input.transpose(0, 1)
-        output, hidden = self.rnn(rnn_input, hidden)
-        # output, hidden = self.rnn_f(rnn_input, hidden)
+        # output, hidden = self.rnn(rnn_input, hidden)
+        output, hidden = self.rnn_f(rnn_input, hidden)
         output = output.squeeze(0)  # (1,B,H)->(B,H)
 
         output = F.log_softmax(self.out(output), dim=1) # self.out(output)[batch, out_vocab]
@@ -956,11 +956,40 @@ class Model(nn.Module):
         with open(self.model_dir + '/' + self.model_name + '.config', 'w') as f:
             json.dump(vars(self.args), f, ensure_ascii=False, indent=4)
 
+    def loadPartofParas(self, submodel, para_path):
+        pretrained_dict = torch.load(para_path)
+        cur_model_dict = submodel.state_dict()
+        filtered_dict = {k: v for k, v in pretrained_dict.items() if k in cur_model_dict}
+        cur_model_dict.update(filtered_dict)
+        return submodel.submodel(cur_model_dict)
+
     def loadModel(self, iter=0):
         print('Loading parameters of iter %s ' % iter)
-        self.encoder.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.enc'))
-        self.policy.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.pol'))
-        self.decoder.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.dec'))
+        cur_path_str = self.pre_model_dir + '/' + self.model_name + '-' + str(iter)
+        # enc
+        pre_dict_enc = torch.load(cur_path_str + '.enc')
+        cur_dict_enc = self.encoder.state_dict()
+        flt_dict_enc = {k: v for k, v in pre_dict_enc.items() if k in cur_dict_enc}
+        cur_dict_enc.update(flt_dict_enc)
+        self.encoder.load_state_dict(cur_dict_enc)
+        # pol
+        pre_dict_pol = torch.load(cur_path_str + '.pol')
+        cur_dict_pol = self.policy.state_dict()
+        flt_dict_pol = {k: v for k, v in pre_dict_pol.items() if k in cur_dict_pol}
+        cur_dict_pol.update(flt_dict_pol)
+        self.policy.load_state_dict(cur_dict_pol)
+        # dec
+        pre_dict_dec = torch.load(cur_path_str + '.dec')
+        cur_dict_dec = self.decoder.state_dict()
+        flt_dict_dec = {k: v for k, v in pre_dict_dec.items() if k in cur_dict_dec}
+        cur_dict_dec.update(flt_dict_dec)
+        self.decoder.load_state_dict(cur_dict_dec)
+        # self.loadPartofParas(self.encoder, cur_path_str + '.enc')
+        # self.loadPartofParas(self.policy, cur_path_str + '.pol')
+        # self.loadPartofParas(self.decoder, cur_path_str + '.dec')
+        # self.encoder.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.enc'))
+        # self.policy.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.pol'))
+        # self.decoder.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.dec'))
 
     def input_index2word(self, index):
         if index in self.input_lang_index2word:
