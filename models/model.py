@@ -972,9 +972,6 @@ class Model(nn.Module):
         flt_dict_dec = {k: v for k, v in pre_dict_dec.items() if k in cur_dict_dec}
         cur_dict_dec.update(flt_dict_dec)
         self.decoder.load_state_dict(cur_dict_dec)
-        # self.loadPartofParas(self.encoder, cur_path_str + '.enc')
-        # self.loadPartofParas(self.policy, cur_path_str + '.pol')
-        # self.loadPartofParas(self.decoder, cur_path_str + '.dec')
         # self.encoder.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.enc'))
         # self.policy.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.pol'))
         # self.decoder.load_state_dict(torch.load(self.pre_model_dir + '/' + self.model_name + '-' + str(iter) + '.dec'))
