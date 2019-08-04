@@ -14,6 +14,8 @@ import re
 import json
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import matplotlib as mpl
 
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-poster')
@@ -48,7 +50,7 @@ def AKL(expert_prob_list):
         KL_list.append(entropy(pi, pj))
     return np.mean(KL_list)
 
-def loadData(data_dir='data/multi-woz',intent_type='domain', plot_flag=False):
+def loadData(data_dir='data/multi-woz',intent_type='domain', plot_flag=False, ob_ids=None):
     input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = util.loadDictionaries(mdir=data_dir)
     # pp added: load intents
     intent2index, index2intent = util.loadIntentDictionaries(intent_type=intent_type, intent_file='{}/intents.json'.format(data_dir)) if intent_type else (None, None)
@@ -78,7 +80,7 @@ def loadData(data_dir='data/multi-woz',intent_type='domain', plot_flag=False):
     x = np.arange(output_vocab_len)
     lines = []
     shift = { # max_x, max_y, min_x, min_y
-        'UNK': (-20, -60, 10, -50),
+        'UNK': (-20, -60, 10, -100),
         'Attraction': (15, 10, -30, 160),
         'Booking': (-60, 10, 10, 200),
         'Hotel': (50, 10, 10, -50),
@@ -90,13 +92,16 @@ def loadData(data_dir='data/multi-woz',intent_type='domain', plot_flag=False):
 
     tmp = []
     distributions = []
-    for i in range(len(index2intent.keys())):
+    plot_ids = ob_ids if ob_ids is not None else range(len(index2intent.keys())) # show partly if you assign some of the ids
+    for i in plot_ids:
+    # for i in range(len(index2intent.keys())):
         intent = index2intent[i]
         labels.append(capwords(intent))
         text = intent_text[intent]
         target_dict_k = collections.Counter(text.split())
         specials = [word for word in target_dict_k if word not in output_lang_word2index] # oov
         rm_words = stopwords.words() + punctuations + specials  # we filter these words
+        rm_words = [w for w in rm_words if w not in output_lang_word2index] # remain vocab words
         for word in rm_words:
             del target_dict_k[word]
         print(intent, ':::', target_dict_k)
@@ -106,18 +111,19 @@ def loadData(data_dir='data/multi-woz',intent_type='domain', plot_flag=False):
         distributions.append(y)
 
         # smooth curves
-        xnew = np.linspace(x.min(), x.max(), 400)
+        num_of_point = 400*100
+        x_new = np.linspace(x.min(), x.max(), num_of_point)
         # 1.
-        y = spline(x, y, xnew)
+        # y_smooth = spline(x, y, x_new)
         # 2.
-        # func = interp1d(x, y, kind='nearest') # cubic
-        # y = func(xnew)
+        func = interp1d(x, y, kind='nearest') # cubic
+        y_smooth = func(x_new)
         tmp.append(y)
         if plot_flag:
-            l_k, = plt.plot(x, y, color=colormap[i + 2], label=intent)
+            l_k, = plt.plot(x_new, y_smooth, color=colormap[i + 2], label=intent)
             lines.append(l_k)
             # show top-n
-            N = 1
+            N = 3
             for j in np.arange(N):
                 k_max, v_max = target_dict_k.most_common()[j]
                 max_indx = output_lang_word2index[k_max]
@@ -148,10 +154,125 @@ def loadData(data_dir='data/multi-woz',intent_type='domain', plot_flag=False):
     plt.xlabel('Index of a word')
     plt.ylabel('Frequency')
     # plt.grid()
-    # plt.show()
-    plt.savefig('post/Statistic.png')
+    plt.show()
+    # plt.savefig('post/Statistic.png')
+
+def loadDataDF(data_dir='data/multi-woz',intent_type='domain', plot_flag=False, remained_plot_intents=None):
+    input_lang_index2word, output_lang_index2word, input_lang_word2index, output_lang_word2index = util.loadDictionaries(mdir=data_dir)
+    # pp added: load intents
+    intent2index, index2intent = util.loadIntentDictionaries(intent_type=intent_type, intent_file='{}/intents.json'.format(data_dir)) if intent_type else (None, None)
+
+    # read data
+    with open('{}/train_dials.json'.format(data_dir)) as f:
+        train_dials = json.load(f)
+        # print train_dials
+
+    intent_text = {}
+    intent_list = list(intent2index.keys())
+    plot_intent_list = remained_plot_intents if remained_plot_intents is not None else intent_list
+    for name, dial in train_dials.items(): # dial
+        for sys, acts in zip(dial['sys'], dial['acts']): # turn
+            for intent in intent2index.keys():
+                if intent in ' '.join(acts):
+                    if intent not in intent_text:
+                        intent_text[intent] = sys
+                    else:
+                        intent_text[intent] += ' ' + sys
+                else:
+                    pass
+
+    labels = []
+    output_vocab_len = 400
+    x = np.arange(output_vocab_len)
+    lines = []
+    shift = { # max_x, max_y, min_x, min_y
+        'UNK': (-20, -60, 10, -100),
+        'Attraction': (15, 10, -30, 160),
+        'Booking': (-60, 10, 10, 200),
+        'Hotel': (50, 10, 10, -50),
+        'Restaurant': (15, 10, 20, 100),
+        'Taxi': (-50, 10, 30, -50),
+        'Train': (30, 10, 0, 150),
+        'general': (-40, 10, 20, -50)
+    }
+
+    tmp = []
+    distributions = []
+    # plot_ids = ob_ids if ob_ids is not None else range(len(index2intent.keys())) # show partly if you assign some of the ids
+    # for i in plot_ids:
+    target_dict_all = collections.Counter(None)
+    for i in range(len(index2intent.keys())):
+        intent = index2intent[i]
+        labels.append(capwords(intent))
+        text = intent_text[intent]
+        target_dict_k = collections.Counter(text.split()) # calculate TF dict for each intent
+        target_dict_all += target_dict_k
+        specials = [word for word in target_dict_k if word not in output_lang_word2index] # oov
+        rm_words = stopwords.words() + punctuations + specials  # we filter these words
+        rm_words = [w for w in rm_words if w not in output_lang_word2index]  # remain vocab words
+        for word in rm_words:
+            del target_dict_k[word]
+        print(intent, ':::', target_dict_k)
+        y = [target_dict_k[output_lang_index2word['%s' % ii]] for ii in x]
+        # print('Expert_i_probs_list=', y)
+        distributions.append(y)
+    target_dict_all_sored = collections.OrderedDict(target_dict_all.most_common())
+    print(target_dict_all_sored)
+    # put data to DataFrame obj
+    df = pd.DataFrame(distributions).T
+    df.columns = intent_list
+    # sort x-index by some value
+    df['FreqAll'] = df.sum(axis=1) # add all freqs from type intents
+    vocab_word_list = [output_lang_index2word['%s' % ii] for ii in x]
+    df['Word'] = vocab_word_list # add one column "Word"
+    # print(df.head(20))
+    # df = df.sort_values(by=['FreqAll'], ascending=False) # sort index by one column; not necessary for density
+    # print(df.head(20))
+
+    # plot figures
+    df = df[plot_intent_list]  # extract part of data for plot
+    df = df.fillna(0)
+    # df.plot() # before scale
+    df = df.divide(df.sum(axis=1), axis=0)  # calculate the percentage
+    df.plot() # after scale
+    df.plot.area(stacked=True, title='Area(Stacked)')
+    df.plot.kde(bw_method=0.3) # default=0.3, the larger the smoother
+    # df.to_excel('post/plot_df.xlsx')
+    # for it in plot_intent_list:
+    #     sns.kdeplot(df[it], shade=True)
+
+    # df[0:100].plot.kde(title='Density - [0, 100]')
+    # df[100:200].plot.kde(title='Density - [100, 200]')
+    # df[200:300].plot.kde(title='Density - [200, 300]')
+    # df[300:400].plot.kde(title='Density - [300, 400]')
+    # df[0:200].plot.kde(title='Density - [0, 200]')
+    # df[100:300].plot.kde(title='Density - [100, 300]')
+    # df[200:400].plot.kde(title='Density - [200, 400]')
+    # df.plot.box()
+    # sns.distplot(df['Hotel'], kde=True)
+    # for it in plot_intent_list:
+    #     sns.kdeplot(df[it])
+    # sns.set_palette("hls")
+    plt.xlabel('x')
+    plt.ylabel('Probability density')
+    plt.savefig('post/density.png')
+    plt.show()
+
 
 if __name__ == "__main__":
-    loadData(intent_type='domain', plot_flag=True)
-    loadData(intent_type='sysact')
-    loadData(intent_type='domain_act')
+    # for i in range(8):
+    #     loadData(intent_type='domain', plot_flag=True, ob_ids=[i])
+    remained_plot_intents = [
+        # 'UNK',
+        # 'Attraction',
+        'Booking', # tick1
+        'Hotel', # tick2
+        # 'Restaurant',
+        'Taxi', # tick3
+        # 'Train',
+        'general' # tick4
+    ]
+    loadDataDF(intent_type='domain', plot_flag=True, remained_plot_intents=remained_plot_intents)
+    # loadDataDF(intent_type='domain', plot_flag=True)
+    # loadData(intent_type='sysact')
+    # loadData(intent_type='domain_act')
