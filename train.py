@@ -104,6 +104,8 @@ new_arg.add_argument('--mu_expert', type=float, default=0.5) # use xx percent of
 new_arg.add_argument('--gamma_expert', type=float, default=0.5) # use xx percent of training data
 new_arg.add_argument('--SentMoE', type=util.str2bool, nargs='?', const=True, default=False, help='if True use sentence info')
 new_arg.add_argument('--if_detach', type=util.str2bool, nargs='?', const=True, default=False) # if detach expert parts
+new_arg.add_argument('--rp_share_rnn', type=util.str2bool, nargs='?', const=True, default=True) # if detach expert parts
+new_arg.add_argument('--future_info', type=str, default='proba') # use hidd or proba
 
 args = parser.parse_args()
 args.device = detected_device.type
