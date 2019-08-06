@@ -657,8 +657,8 @@ class Model(nn.Module):
             else:  # hyper weights
                 # lambda_expert = 0.5
                 lambda_expert = self.args.lambda_expert
-                self.gen_loss = lambda_expert * self.gen_loss + (1 - lambda_expert) * torch.mean(
-                    torch.tensor(gen_loss_list))
+                self.gen_loss = (1 - lambda_expert) * self.gen_loss + \
+                                lambda_expert * torch.mean(torch.tensor(gen_loss_list))
         self.loss = self.gen_loss
         self.loss.backward()
         grad = self.clipGradients()
