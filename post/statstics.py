@@ -80,14 +80,14 @@ def loadData(data_dir='data/multi-woz',intent_type='domain', plot_flag=False, ob
     x = np.arange(output_vocab_len)
     lines = []
     shift = { # max_x, max_y, min_x, min_y
-        'UNK': (-20, -60, 10, -100),
-        'Attraction': (15, 10, -30, 160),
-        'Booking': (-60, 10, 10, 200),
-        'Hotel': (50, 10, 10, -50),
-        'Restaurant': (15, 10, 20, 100),
-        'Taxi': (-50, 10, 30, -50),
-        'Train': (30, 10, 0, 150),
-        'general': (-40, 10, 20, -50)
+        'UNK':        10,
+        'Attraction': 100,
+        'Booking':    100,
+        'Hotel':      100,
+        'Restaurant': 100,
+        'Taxi':       50,
+        'Train':      100,
+        'general':    100
     }
 
     tmp = []
@@ -123,24 +123,25 @@ def loadData(data_dir='data/multi-woz',intent_type='domain', plot_flag=False, ob
             l_k, = plt.plot(x_new, y_smooth, color=colormap[i + 2], label=intent)
             lines.append(l_k)
             # show top-n
-            N = 3
-            for j in np.arange(N):
+            start_h = 30
+            N = 10
+            for j in np.arange(start_h, N + start_h):
                 k_max, v_max = target_dict_k.most_common()[j]
                 max_indx = output_lang_word2index[k_max]
                 plt.annotate('[%s]' % (re.sub(r'\[|\]', '', k_max)),
-                             # xytext=(max_indx + shift[intent][0], v_max + shift[intent][1]),
+                             xytext=(max_indx, v_max + (j+2)*shift[intent]),
                              xy=(max_indx, v_max),
                              color=colormap[i + 2], fontsize='xx-large',
                              arrowprops=dict(facecolor='black',
                                              arrowstyle="simple",
                                              connectionstyle="arc3,rad=-0.1"))
             # show lowest-n
-            start = 10
-            for j in np.arange(start, N + start):
+            start_l = 30
+            for j in np.arange(start_l, N + start_l):
                 k_min, v_min = target_dict_k.most_common()[-j]
                 min_indx = output_lang_word2index[k_min]
                 plt.annotate('(%s)' % (re.sub(r'\[|\]', '', k_min)),
-                             # xytext=(min_indx + +shift[intent][2], v_min + shift[intent][3]),
+                             xytext=(min_indx, v_min + (j+2)*shift[intent]),
                              xy=(min_indx, v_min),
                              color=colormap[i + 2], fontsize='xx-large',
                              arrowprops=dict(facecolor='blue',
@@ -168,7 +169,7 @@ def loadDataDF(data_dir='data/multi-woz',intent_type='domain', plot_flag=False, 
         # print train_dials
 
     intent_text = {}
-    intent_list = list(intent2index.keys())
+    intent_list = [capwords(it) if it != it.upper() else it for it in intent2index.keys()]
     plot_intent_list = remained_plot_intents if remained_plot_intents is not None else intent_list
     for name, dial in train_dials.items(): # dial
         for sys, acts in zip(dial['sys'], dial['acts']): # turn
@@ -234,9 +235,10 @@ def loadDataDF(data_dir='data/multi-woz',intent_type='domain', plot_flag=False, 
     df = df.fillna(0)
     # df.plot() # before scale
     df = df.divide(df.sum(axis=1), axis=0)  # calculate the percentage
-    df.plot() # after scale
-    df.plot.area(stacked=True, title='Area(Stacked)')
-    df.plot.kde(bw_method=0.3) # default=0.3, the larger the smoother
+    # df.plot() # after scale
+    # df.plot.area(stacked=True, title='Area(Stacked)')
+    # df.plot.kde(bw_method=0.3, xlim=[-1000,1000], ylim=[-0.0002,0.008]) # default=0.3, the larger the smoother
+    df.plot.kde(bw_method=0.3, figsize=(8,3)) # default=0.3, the larger the smoother
     # df.to_excel('post/plot_df.xlsx')
     # for it in plot_intent_list:
     #     sns.kdeplot(df[it], shade=True)
@@ -252,27 +254,46 @@ def loadDataDF(data_dir='data/multi-woz',intent_type='domain', plot_flag=False, 
     # sns.distplot(df['Hotel'], kde=True)
     # for it in plot_intent_list:
     #     sns.kdeplot(df[it])
-    # sns.set_palette("hls")
-    plt.xlabel('x')
-    plt.ylabel('Probability density')
-    plt.savefig('post/density.png')
+    sns.set_palette("hls")
+    # plt.figure(figsize=(20, 10))
+    plt.xticks([])
+    plt.yticks([])
+    # plt.xlabel('x')
+    plt.ylabel('Density', fontsize=18)
+    # plt.ylabel('')
+    plt.legend(loc=1, fontsize=18) # upper right
+    plt.tight_layout()
+    # plt.set_size_inches()
+    plt.savefig('post/statistic_%s.png' % intent_type)
     plt.show()
 
 
 if __name__ == "__main__":
     # for i in range(8):
     #     loadData(intent_type='domain', plot_flag=True, ob_ids=[i])
-    remained_plot_intents = [
+    # loadData(intent_type='domain_act') 
+
+    remained_plot_intents_domain = [
         # 'UNK',
-        # 'Attraction',
-        'Booking', # tick1
+        'Attraction',
+        # 'Booking', # tick1
         'Hotel', # tick2
-        # 'Restaurant',
-        'Taxi', # tick3
+        'Restaurant', # tick3
+        'Taxi', # tick4
         # 'Train',
-        'general' # tick4
+        'General' # tick5
     ]
-    loadDataDF(intent_type='domain', plot_flag=True, remained_plot_intents=remained_plot_intents)
-    # loadDataDF(intent_type='domain', plot_flag=True)
-    # loadData(intent_type='sysact')
-    # loadData(intent_type='domain_act')
+    loadDataDF(intent_type='domain', plot_flag=True, remained_plot_intents=remained_plot_intents_domain)
+
+    '''
+    # loadDataDF(intent_type='domain', plot_flag=True, remained_plot_intents=None)
+    remained_plot_intents_act = [
+        'Welcome',
+        'Book',
+        'Inform',
+        'Request',
+        'Recommend',
+    ]
+    loadDataDF(intent_type='sysact', plot_flag=True, remained_plot_intents=remained_plot_intents_act)
+    
+    '''

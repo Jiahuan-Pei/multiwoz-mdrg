@@ -764,7 +764,7 @@ class MultiWozEvaluator(BaseEvaluator):
         return bleu*100, prec*100, rec*100, f1*100
 
     # pp added
-    def summarize_report(self, dialogues, mode='Valid'):
+    def summarize_report(self, dialogues, mode='Valid', pt_values=True):
         # BLEU, MATCHES, SUCCESS, SCORE, total
         SUCCESS, MATCHES = self.evaluate_match_success(dialogues, mode)
         BLEU, P, R, F1 = self.evaluate_bleu_prf(dialogues)
@@ -772,14 +772,15 @@ class MultiWozEvaluator(BaseEvaluator):
         NUM_DIALS = len(dialogues)
         NUM_TURNS = sum([len(e) for e in dialogues])
 
-        print('%s BLEU: %.4f' % (mode, BLEU))
-        print('%s Matches: %2.2f%%' % (mode, MATCHES))
-        print('%s Success: %2.2f%%' % (mode, SUCCESS))
-        print('%s Score: %.4f' % (mode, SCORE))
-        print('%s Precision: %.2f%%' % (mode, P))
-        print('%s Recall: %.2f%%' % (mode, R))
-        print('%s F1: %.2f%%' % (mode, F1))
-        print('%s Dialogues: %s' % (mode, NUM_DIALS))
-        print('%s Turns: %s' % (mode, NUM_TURNS))
+        if pt_values:
+            print('%s BLEU: %.4f' % (mode, BLEU))
+            print('%s Matches: %2.2f%%' % (mode, MATCHES))
+            print('%s Success: %2.2f%%' % (mode, SUCCESS))
+            print('%s Score: %.4f' % (mode, SCORE))
+            print('%s Precision: %.2f%%' % (mode, P))
+            print('%s Recall: %.2f%%' % (mode, R))
+            print('%s F1: %.2f%%' % (mode, F1))
+            print('%s Dialogues: %s' % (mode, NUM_DIALS))
+            print('%s Turns: %s' % (mode, NUM_TURNS))
         return BLEU, MATCHES, SUCCESS, SCORE, P, R, F1
 

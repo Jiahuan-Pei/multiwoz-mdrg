@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import functools as ft
 
 def auto_display_subplots(df_list, title_list, column=2, label_names=None):
     label_names = df_list[0].columns.tolist() if label_names is None else label_names
@@ -71,7 +72,7 @@ for fname in os.listdir(exp_output_dir):
             item = metric_name, model, int(step), float(val)
             l.append(item)
         lines.extend(l)
-d = pd.DataFrame(lines, columns=['metric', 'models', 'step', 'val'])
+d = pd.DataFrame(lines, columns=['metric', 'model', 'step', 'val'])
 
 # auto_display_subplots(df_list, title_list, column=2, label_names=None)
 for metric in metric_list:
@@ -87,12 +88,12 @@ for metric in metric_list:
         frames_model.append(d_model)
 
     # merge dataframe all types of mokdels
-    df = reduce(lambda df1, df2: df1.merge(df2, "outer"), frames_model)
+    df = ft.reduce(lambda df1, df2: df1.merge(df2, "outer"), frames_model)
     df = df.set_index('step')  # reindex
     # df = df[model_list]
     df_list.append(df)
-    print '-'*50, '\n', metric
-    print df
+    print('-'*50, '\n', metric)
+    print(df)
 
 auto_display_subplots(df_list, metric_list, 2)
 plt.savefig('{}{}'.format(exp_output_dir, 'comparision.png'))
