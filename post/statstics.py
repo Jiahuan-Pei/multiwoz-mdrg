@@ -242,7 +242,13 @@ def loadDataDF(data_dir='data/multi-woz',intent_type='domain', plot_flag=False, 
     # df.to_excel('post/plot_df.xlsx')
     # for it in plot_intent_list:
     #     sns.kdeplot(df[it], shade=True)
-
+    plt.annotate('[entrance]',
+                 xytext=(0.25, 3.6),
+                 xy=(0.15, 2.5),
+                 color=colormap[1], fontsize='xx-large',
+                 arrowprops=dict(facecolor='black',
+                                 arrowstyle="simple",
+                                 connectionstyle="arc3,rad=-0.1"))
     # df[0:100].plot.kde(title='Density - [0, 100]')
     # df[100:200].plot.kde(title='Density - [100, 200]')
     # df[200:300].plot.kde(title='Density - [200, 300]')
@@ -256,6 +262,7 @@ def loadDataDF(data_dir='data/multi-woz',intent_type='domain', plot_flag=False, 
     #     sns.kdeplot(df[it])
     sns.set_palette("hls")
     # plt.figure(figsize=(20, 10))
+
     plt.xticks([])
     plt.yticks([])
     # plt.xlabel('x')
