@@ -21,8 +21,8 @@ evaluator=MultiWozEvaluator('MultiWozEvaluator')
 
 golden_path = 'data/multi-woz/test_dials.json'
 bsl_path = 'post/case_study/bsl-34970/test_dials_gen_19.json'
-rmoe_path = 'post/case_study/rmoe-36259/test_dials_gen_18.json'
-pmoe_path = 'post/case_study/pmoe-36281/test_dials_gen_18.json'
+rmoe_path = 'post/case_study/mog-p-36259/test_dials_gen_18.json'
+pmoe_path = 'post/case_study/mog-36281/test_dials_gen_18.json'
 
 def ttest(data_A, data_B, alpha):
     # Paired Student's t-test: Calculate the T-test on TWO RELATED samples of scores, a and b. for one sided test we multiply p-value by half
@@ -49,6 +49,7 @@ def load_cases(bsl=bsl_path, rmoe=rmoe_path, pmoe=pmoe_path, golden=golden_path)
         rmoe_score_list = []
         pmoe_score_list = []
         good_examples = {}
+        bad_examples = {}
 
         for fname in gold_json:
             bsl_score = evaluator.summarize_report({fname: bsl_json[fname]}, mode='Test', pt_values=False)[3] # score = val[3]
@@ -74,15 +75,31 @@ def load_cases(bsl=bsl_path, rmoe=rmoe_path, pmoe=pmoe_path, golden=golden_path)
                 # print(rmoe_json[fname], '\n'+'-'*50)
                 # print(pmoe_json[fname], '\n'+'-'*50)
 
+            if pmoe_score < bsl_score:
+                bad_examples[fname] = (bsl_score-pmoe_score,
+                                       gold_json[fname]['usr'],
+                                       gold_json[fname]['sys'],
+                                       bsl_json[fname],
+                                       pmoe_json[fname])
+
         ttest(bsl_score_list, rmoe_score_list, 0.01)
         ttest(bsl_score_list, pmoe_score_list, 0.01)
         ttest(rmoe_score_list, pmoe_score_list, 0.01)
-        print('Find out good examples:', len(good_examples)) # 249
-        df = pd.DataFrame(good_examples).T
-        df.columns = ['pr_diff', 'rb_diff', 'user', 'gold', 'bsl', 'rmoe', 'pmoe']
-        df = df.sort_values(by=['pr_diff','rb_diff'], ascending=False)
-        print(df.head())
-        df.to_excel('post/good_examples.xlsx')
+
+        # print('Find out good examples:', len(good_examples)) # 387
+        # df = pd.DataFrame(good_examples).T
+        # df.columns = ['pr_diff', 'rb_diff', 'user', 'gold', 'bsl', 'rmoe', 'pmoe']
+        # df = df.sort_values(by=['pr_diff','rb_diff'], ascending=False)
+        # print(df.head())
+        # df.to_excel('post/good_examples.xlsx')
+
+        print('Find out bad examples:', len(bad_examples))
+        bad_df = pd.DataFrame(bad_examples).T
+        print(bad_df.head())
+        bad_df.columns = ['bp_diff', 'user', 'gold', 'bsl', 'pmoe']
+        bad_df = bad_df.sort_values(by=['bp_diff'], ascending=False)
+        bad_df.to_excel('post/bad_examples.xlsx')
+
     return
 
 if __name__ == "__main__":
