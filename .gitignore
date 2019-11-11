@@ -2,6 +2,7 @@
 model/*.pyc
 utils/*.pyc
 
+/.idea/
 .idea/*
 .idea/workspace.xml
 
