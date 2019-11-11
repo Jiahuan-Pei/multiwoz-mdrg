@@ -1,0 +1,112 @@
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<!-- For the full list of available Crowd HTML Elements and their input/output documentation,
+      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
+
+<!-- You must include crowd-form so that your task submits answers to MTurk -->
+<crowd-form answer-format="flatten-objects">
+
+    <crowd-instructions link-text="View instructions" link-type="button">
+    <short-summary>
+      <p>Given a background (i.e., plot, comments, review of a movie) and previous conversations, assess the quality of responses from different chatbots or humans. We will go through the annotations and random annotations will not be adopted.</p>
+    </short-summary>
+
+    <detailed-instructions>
+      <p>Given a background (i.e., plot, comments, review of a movie) and previous conversations, assess which response (<b>H2-1</b> or <b>H2-2</b>) is better in terms of <b>Naturalness</b>, <b>Informativeness</b>, <b>Appropriateness</b> and <b>Humanness</b>.</p>
+     <p><b>Naturalness:</b> means whether the response is fluent (not just an uncomplete span from background).</p>
+     <p><b>Informativeness</b> means whether the response contains background-specific information instead of generic responses like "i like this movie".</p>
+     <p><b>Appropriateness</b> means whether the response contains more appropriate information (from background) as a response to the context history.</p>
+     <p><b>Humanness</b> means whether the response looks like it was written by a human (good enough as a response in terms of all aspects).</p>
+    </detailed-instructions>
+
+    <positive-example>
+      <p><b>Background (i.e., plot, comments, review of a movie): </b></p>
+      <p>...  learned belongs to krendler .  lecter then contacts starling , luring her to washington 's union station for a meeting . ...</p>
+      <p><b>Context: </b></p>
+      <p>what scene did you like from the movie ?</p>
+      <p><b>Responses from different chatbots/humans: </b></p>
+      <p>1. i like the scene where lecter then contacts starling , luring her to washington 's union station for a meeting . </p>
+      <p>...</p>
+      <p>Explanation: Response 1 has good fluency (<b>Naturalness</b> and <b>Humanness</b>) with combinated by general words (e.g. " i like the scene where") and relatively continuous background span information (<b>Informativeness</b>) (e.g. "lecter then contacts starling , luring her to washington 's union station for a meeting"). Besides, it's content is very specific and appropriate/relevent to the context (<b>Appropriateness</b>).</p>
+    </positive-example>
+
+    <negative-example>
+        <p><b>Background (i.e., plot, comments, review of a movie): </b></p>
+      <p>...  learned belongs to krendler .  lecter then contacts starling , luring her to washington 's union station for a meeting . ...</p>
+        <p><b>Context: </b></p>
+      <p>what scene did you like from the movie ?</p>
+      <p><b>Responses from different chatbots/humans: </b></p>
+      <p>1. lecter then contacts starling, luring her to washington's union station for a meeting.</p>
+      <p>2. i love this movie ! </p>
+      <p>3. my favorite character is crusade.</p>
+      <p>...</p>
+      <p>Explanation: Response 1 is not fluent and lacks <b>Naturalness</b>.
+Response 2 is a generic response, too short, lacks <b>Informativeness</b>, and not using backgroud information effectively. We think the too short response is lack information.
+Response 3 lacks relevance <b>Appropriateness</b> with the current context language, in addtion, the background information used in response is better if it is relevant. </p>
+    </negative-example>
+  </crowd-instructions>
+    
+    <div>
+    <p><b>Background (i.e., plot, comments, review of a movie):</b></p>
+    <p>${background}</p>
+    <p><b>Previous 1-turn conversation (nan means no previous conversation): </b></p>
+    <p>${context}</p>
+    <p>${query}</p>
+    <p><b>Some good examples as the next response utterance (Note that good responses are not limited to these demonstrated ones):</b></p>
+    <p><${reference}</p>
+    <p><b>Next candidate response utterances to access:</b></p>
+    <p><b>H2-1: </b>${glks}</p>
+    <p><b>H2-2: </b>${lks}</p>
+    <p><b>H2-3: </b>${refnet}</p>
+    <p><b>H2-4: </b>${bidaf}</p>
+    <p><b>H2-5: </b>${gttp}</p>
+    </div>
+    
+    <p>Which response is better in terms of <b>Naturalness</b>, <b>Informativeness</b>, <b>Appropriateness</b> and <b>Humanness</b>? Ignore the tokenization issues (e.g., isn't => is n't) when making your choices.</p>
+    
+    <div>
+     <p><b>1. Naturalness</b>: Select <b>all</b> that are <b>fluent</b> (not just an uncomplete span from background). </p>
+    <div><crowd-checkbox name="Naturalness" value="GLKS"><b>H2-1</b></div>
+    <div><crowd-checkbox name="Naturalness" value="LKS"><b>H2-2</b></div>
+    <div><crowd-checkbox name="Naturalness" value="RefNet"><b>H2-3</b></div>
+    <div><crowd-checkbox name="Naturalness" value="BiDAF"><b>H2-4</b></div>
+    <div><crowd-checkbox name="Naturalness" value="GTTP"><b>H2-5</b></div>
+    <div><crowd-checkbox name="Naturalness" value="None"><b>All bad</b></div>
+    
+    </div>
+    
+    <div>
+     <p><b>2. Informativeness</b>: Select <b>all</b> that contain <b>background-specific</b> information instead of generic responses such as “i was very sorry.”.</p>
+    <div><crowd-checkbox name="Informativeness" value="GLKS"><b>H2-1</b></div>
+    <div><crowd-checkbox name="Informativeness" value="LKS"><b>H2-2</b></div>
+    <div><crowd-checkbox name="Informativeness" value="RefNet"><b>H2-3</b></div>
+    <div><crowd-checkbox name="Informativeness" value="BiDAF"><b>H2-4</b></div>
+    <div><crowd-checkbox name="Informativeness" value="GTTP"><b>H2-5</b></div>
+    <div><crowd-checkbox name="Informativeness" value="None"><b>All bad</b></div>
+    
+    </div>
+    
+   <div>
+     <p><b>3. Appropriateness</b>: Select <b>all</b> that provide <b>appropriate background-specific</b> information as a response to the <b>last conversation turn</b> of the conversation history.</p>
+    <div><crowd-checkbox name="Appropriateness" value="GLKS"><b>H2-1</b></div>
+    <div><crowd-checkbox name="Appropriateness" value="LKS"><b>H2-2</b></div>
+    <div><crowd-checkbox name="Appropriateness" value="RefNet"><b>H2-3</b></div>
+    <div><crowd-checkbox name="Appropriateness" value="BiDAF"><b>H2-4</b></div>
+    <div><crowd-checkbox name="Appropriateness" value="GTTP"><b>H2-5</b></div>
+    <div><crowd-checkbox name="Appropriateness" value="None"><b>All bad</b></div>
+    
+    </div>
+    
+     <div>
+     <p><b>4. Humanness</b>: Select <b>all</b> that look like <b>they are written by a human</b> (good enough as responses in terms of all aspects).</p>
+    <div><crowd-checkbox name="Humanness" value="GLKS"><b>H2-1</b></div>
+    <div><crowd-checkbox name="Humanness" value="LKS"><b>H2-2</b></div>
+    <div><crowd-checkbox name="Humanness" value="RefNet"><b>H2-3</b></div>
+    <div><crowd-checkbox name="Humanness" value="BiDAF"><b>H2-4</b></div>
+    <div><crowd-checkbox name="Humanness" value="GTTP"><b>H2-5</b></div>
+    <div><crowd-checkbox name="Humanness" value="None"><b>All bad</b></div>
+    
+    </div>
+    
+</crowd-form>

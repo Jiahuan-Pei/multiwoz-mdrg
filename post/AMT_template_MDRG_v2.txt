@@ -1,0 +1,127 @@
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<!-- For the full list of available Crowd HTML Elements and their input/output documentation,
+      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
+
+<!-- You must include crowd-form so that your task submits answers to MTurk -->
+<crowd-form answer-format="flatten-objects">
+
+    <crowd-instructions link-text="View instructions" link-type="button">
+    <short-summary>
+      <p>Given a query (i.e., the current uterrance from a user) and historical conversations (i.e., previous utterances between this user and the chatbot), assess the quality of responses from different chatbots or humans. We will go through the annotations and random annotations will not be adopted.</p>
+      <p><b>NOTE</b>: Please contact me (ppsunrise88@gmail.com) if you have any questions. </p>
+    </short-summary>
+
+    <detailed-instructions>
+     <p>Given a query (i.e., the current utterance from a user) and historical conversations (i.e., previous utterances between this user and the chatbot), assess which response (<b>R1</b> or <b>R2</b>) is better in terms of <b>Informativeness</b>, <b>Consistency</b>, <b>Fluency</b> and <b>Humanness</b>.</p>
+     <p><b>Informativeness:</b> means whether the response provides appropriate information that satisfy the user query. No extra inappropriate information is provided.</p>
+     <p><b>Consistency:</b> means whether the response is semantically aligned with the ground truth response.</p>
+     <p><b>Fluency:</b> means whether the response is fluent to read and understand without grammar mistakes, redundant information, unnatural expressions or twisted logic. </p>
+     <p><b>Humanness:</b> means whether the response looks like it was written by a human (good enough as a response in terms of all aspects).</p>
+     <p><b>NOTE</b>: <br/>
+     1. Some specific information has been replaced by some generalized (or delexicalized) slots. E.g., "London tower" is replaced as [attraction_name], "cheap/moderate/expensive" will be replaced as [value_pricerange], etc. <br/>
+     2. Notations like "-s", "-ly" are the suffix of the previous word. </p>
+    </detailed-instructions>
+
+    <positive-example>
+      <p><b>Historical conversations</b> (i.e., previous utterances between this user and the chatbot): </p>
+      <p>U1: i am trying to get some information on the [restaurant_name] restaurant please. <br/>
+         S1: that is a great inexpensive [value_food] place in the [value_area] . would you like their phone number ?</p>
+      <p><b>User query: </b></p>
+      <p>i need a address and the area please ?</p>
+      <p><b>Ground truth response:</b></p>
+      <p>they are located on the [value_area] side and their address is [attraction_address]. is there anything else i can help you with ?</p>
+      <p><b>Responses from different chatbots/humans: </b></p>
+      <p>R1: It is located at [restaurant_address] in the [value_area]. is there anything else i can help you with ?</p>
+      <p><b>Explanation:</b><br/>
+         User query needs the <i>address</i> and <i>area</i> of the restaurant. <br/>
+         - R1 has good <b>Informativeness</b> because it provides <i>[restaurant_address]</i> and <i>[value_area]</i> correctly and answers all the requested attributes in the user query. <br/>
+         - R1 has good <b>Consistency</b> because it is semantically aligned with the ground truth response, i.e., it overlaps most of the words in the ground truth sentense. <br/>
+         - R1 has good <b>Fluency</b> with combinated by general words (e.g. "It is located at...") and it's content is very specific and appropriate/relevent to the context (User query and historical conversations).<br/>
+         - R1 has good  <b>Humanness</b> because it makes you feel that it was written by a human (good enough as a response in terms of all aspects). </p>
+    </positive-example>
+
+    <negative-example>
+      <p><b>Historical conversations</b> (i.e., previous utterances between this user and the chatbot):</b></p>
+      <p>U1: i am looking for a train to [value_place] . i am departing from [value_place] . <br/>
+         S1: there are [value_count] trains during the week that go from [value_place] to [value_place] , do you have a day and time you would like to arrive ? <br/>
+         U2: yes , i would like to leave on [value_day] and arrive by [value_time]<br/>
+         S2: how about the [train_id] ? it arrives at [value_time] . shall i book you a ticket ?</p>
+      <p><b>User query: </b></p>
+      <p>yes , please . i would like [value_count] tickets on that train , and i will need the reference number .</p>
+      <p><b>Ground truth response: </b></p>
+      <p>the train is booked , and the reference number is [train_reference] . total fee is [value_price] gbp payable at the station . can i help you with anything else ? </p>
+      <p><b>Responses from different chatbots/humans: </b></p>
+      <p>
+         R1. i have booked you [value_count] tickets on [train_id] leaving [value_place] at [value_time] . the reference number is [train_reference] . <br/>
+         R2. i have , ade the booking and here is the information.<br/>
+         R3. booking was successful , the total fee is [value_price] gbp payable at the station . reference number is [train_reference] .<br/>
+         R4. reference number [train_reference] . total fee [value_price]. <br/>
+         R5. how many tickets do you need ?
+      </p>
+      <p><b>Explanation:</b><br/>
+         - R1 does not satisfy the <b>Informativeness</b> because it do not provide [value_price].<br/>
+         - R1 does not satisfy the <b>Consistency</b> because its overlap with the grouth true response is not as high as that of R3.<br/>
+         - R2 does not satisfy the <b>Fluency</b> because the user has the grammar errors and difficult to be understood. <br/>
+         - Since R2 is not good in terms of both <b>Fluency</b> and <b>Informativeness</b>, so it is not good in term of <b>Humanness</b>. <br/>
+         - R4 does not satisfy the <b>Humanness</b> because it makes you feel that it was not written by a human. <br/>
+         - R5 does not satisfy the  <b>Fluency</b> and <b>Humanness</b> because it contains twisted logic (i.e., the user has already mentioned the number of tickets is [value_count]).
+      </p>
+
+    </negative-example>
+  </crowd-instructions>
+
+    <div>
+    <p><b>Historical conversations (i.e., previous utterances between this user and the chatbot. nan means no previous conversation):</b></p>
+    <p>${context}</p>
+    <p><b>User query (i.e., the current utterrance from a user): </b></p>
+    <p>${query}</p>
+    <p><b>Next candidate response utterances to access:</b></p>
+    <p><b>R1: </b>${mog}</p>
+    <p><b>R2: </b>${larl}</p>
+    <p><b>R3: </b>${gold}</p>
+    <p><b>R4: </b>${s2s}</p>
+    </div>
+
+    <p>Which response is better in terms of <b>Informativeness</b>, <b>Consistency</b>, <b>Fluency</b> and <b>Humanness</b>? Ignore the tokenization issues (e.g., isn't => is n't) and the delexilization issues (e.g., [value_pricerange] -ly => moderately; hotel -s => hotels) when making your choices.</p>
+    <p><b>NOTE</b>: please be <b>precise</b> and <b>cautious</b> with pitching on <b>all</b> options (e.g., pitch on all R1, R2, R3, R4 under one criterion like <b>Informativeness</b>.). </p>
+    <div>
+     <p><b>1. Informativeness</b>: Select <b>all</b> that are response <b>only</b> provides appropriate information that is requested by the user query. <b>No extra</b> inappropriate information is provided. </p>
+    <div><crowd-checkbox name="Informativeness" value="MOG"><b>R1</b></div>
+    <div><crowd-checkbox name="Informativeness" value="LARL"><b>R2</b></div>
+    <div><crowd-checkbox name="Informativeness" value="GOLD"><b>R3</b></div>
+    <div><crowd-checkbox name="Informativeness" value="S2S"><b>R4</b></div>
+    <div><crowd-checkbox name="Informativeness" value="None"><b>All bad</b></div>
+    </div>
+
+    <div>
+     <p><b>3. Fluency</b>: Select <b>all</b> that are fluent to read and understand without grammar mistakes, redundant information, unnatural expressions or twisted logic.</p>
+    <div><crowd-checkbox name="Fluency" value="MOG"><b>R1</b></div>
+    <div><crowd-checkbox name="Fluency" value="LARL"><b>R2</b></div>
+    <div><crowd-checkbox name="Fluency" value="GOLD"><b>R3</b></div>
+    <div><crowd-checkbox name="Fluency" value="S2S"><b>R4</b></div>
+    <div><crowd-checkbox name="Fluency" value="None"><b>All bad</b></div>
+    </div>
+
+    <div>
+     <p><b>4. Humanness</b>: Select <b>all</b> that look like <b>they are written by a human</b> (good enough as responses in terms of all aspects).</p>
+    <div><crowd-checkbox name="Humanness" value="MOG"><b>R1</b></div>
+    <div><crowd-checkbox name="Humanness" value="LARL"><b>R2</b></div>
+    <div><crowd-checkbox name="Humanness" value="GOLD"><b>R3</b></div>
+    <div><crowd-checkbox name="Humanness" value="S2S"><b>R4</b></div>
+    <div><crowd-checkbox name="Humanness" value="None"><b>All bad</b></div>
+    </div>
+
+    <div>
+    <p><b>2. Consistency</b>: Select <b>all</b> that are semantically aligned with the following demonstrated ground truth response.</p>
+    <p><b>Demonstrated ground truth response:</b></p>
+    <p>${gold}</p>
+    <div><crowd-checkbox name="Consistency" value="MOG"><b>R1</b></div>
+    <div><crowd-checkbox name="Consistency" value="LARL"><b>R2</b></div>
+    <div><crowd-checkbox name="Consistency" value="GOLD"><b>R3</b></div>
+    <div><crowd-checkbox name="Consistency" value="S2S"><b>R4</b></div>
+    <div><crowd-checkbox name="Consistency" value="None"><b>All bad</b></div>
+    </div>
+
+</crowd-form>

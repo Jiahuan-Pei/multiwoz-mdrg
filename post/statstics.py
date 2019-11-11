@@ -235,10 +235,10 @@ def loadDataDF(data_dir='data/multi-woz',intent_type='domain', plot_flag=False, 
     df = df.fillna(0)
     # df.plot() # before scale
     df = df.divide(df.sum(axis=1), axis=0)  # calculate the percentage
-    # df.plot() # after scale
+    df.plot() # after scale
     # df.plot.area(stacked=True, title='Area(Stacked)')
     # df.plot.kde(bw_method=0.3, xlim=[-1000,1000], ylim=[-0.0002,0.008]) # default=0.3, the larger the smoother
-    df.plot.kde(bw_method=0.3, figsize=(8,3)) # default=0.3, the larger the smoother
+    # df.plot.kde(bw_method=0.3, figsize=(8,3)) # default=0.3, the larger the smoother
     # df.to_excel('post/plot_df.xlsx')
     # for it in plot_intent_list:
     #     sns.kdeplot(df[it], shade=True)
