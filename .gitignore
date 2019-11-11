@@ -13,5 +13,6 @@ logs/*
 job_out/*
 job_errors/*
 
+post/*
 post/*.out
 post/*.xlsx
