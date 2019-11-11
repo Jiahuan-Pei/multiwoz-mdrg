@@ -21,7 +21,7 @@ conda install pytorch torchvision -c pytorch
 ## Preprocessing
 To download and pre-process the data run:
 
-```python multiwoz/create_delex_data.py```
+```python multiwoz/Create_delex_data.py```
 
 ## For debugging
 To debug train.py, you can add the following parameteres to save time
