@@ -1,10 +1,9 @@
-# multiwoz
+# RPMOG
 
-multiwoz is an open source toolkit for building end-to-end trainable task-oriented dialogue models.
-It is released by Paweł Budzianowski from Cambridge Dialogue Systems Group under Apache License 2.0.
+The source code for paper "Retrospective and Prospective Mixture-of-Generators for Task-oriented Dialogue Response Generation"
 
 # Requirements
-Python 2 with pip
+Python 3 with pip
 
 # Quick start
 In repo directory:
@@ -12,8 +11,8 @@ In repo directory:
 ## Install the required packages
 - Using Conda:
 ```console
-cd multiwoz-moe
-conda create --name multiwoz python=2.7 anaconda
+cd multiwoz-mdrg
+conda create --name multiwoz python=3.7 anaconda
 source activate multiwoz
 conda install --file requirements.txt 
 conda install pytorch torchvision -c pytorch
@@ -22,7 +21,7 @@ conda install pytorch torchvision -c pytorch
 ## Preprocessing
 To download and pre-process the data run:
 
-```python create_delex_data.py```
+```python multiwoz/create_delex_data.py```
 
 ## For debugging
 To debug train.py, you can add the following parameteres to save time
@@ -62,13 +61,7 @@ To evaluate the run:
 
 ```python test.py [--args=value]```
 
-# Benchmark results
-The following [benchmark results](http://dialogue.mi.eng.cam.ac.uk/index.php/corpus/) were produced by this software.
-We ran a small grid search over various hyperparameter settings
-and reported the performance of the best model on the test set.
-The selection criterion was 0.5*match + 0.5*success+100*BLEU on the validation set.
-The final parameters were:
-
+## Hyperparamters
 ```
 // hyperparamters for model learning
 --max_epochs        : 20
@@ -85,7 +78,7 @@ The final parameters were:
 --hid_size_enc      : 150
 --hid_size_pol      : 150
 --hid_size_dec      : 150
---cell_type         : lstm
+--cell_type         : gru
 ```
 
 
@@ -112,6 +105,3 @@ work, please cite the corresponding papers. The bibtex are listed below:
 }
 ```
 
-# Bug Report
-
-If you have found any bugs in the code, please contact: pfb30 at cam dot ac dot uk
