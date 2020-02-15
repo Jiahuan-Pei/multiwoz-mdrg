@@ -1,6 +1,6 @@
 # RPMOG
 
-The source code for paper "Retrospective and Prospective Mixture-of-Generators for Task-oriented Dialogue Response Generation" on ECAI 2020.
+To facilite reproducibility, we release the source code for paper "Retrospective and Prospective Mixture-of-Generators for Task-oriented Dialogue Response Generation" on ECAI 2020.
 
 Please contact me **directly** if any questions and **cite** our paper if you use any resources and/or codes in this repository. 
 
