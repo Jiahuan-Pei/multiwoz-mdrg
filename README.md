@@ -2,7 +2,7 @@
 
 To facilitate reproducibility, we release the source code for paper "[Retrospective and Prospective Mixture-of-Generators for Task-oriented Dialogue Response Generation](https://ecai2020.eu/papers/92_paper.pdf)" on ECAI 2020.
 
-Please contact me **directly** by email (j.pei@uva.nl) if any questions and **cite** our paper if you use any resources and/or codes in this repository. 
+Please contact me by email (j.pei@uva.nl) if any questions and **cite** our paper if you use any resources and/or codes in this repository. 
 
 # Requirements
 Python 3 with pip
